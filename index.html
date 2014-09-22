@@ -3,9 +3,14 @@
     <head>
         <meta charset="utf-8">
         <title></title>
-        <script>(function(){'use strict';var _=Object.observe?'observe':this===undefined?'modern':'avalon';if("ontouchstart"in window||navigator.pointerEnabled||navigator.msPointerEnabled)_+='\ntouch';alert(_.replace(/.+/g,'<script src="/libs/$&.js"></'+'script>'))})();</script>
+        <script>//(function(){'use strict';var _=Object.observe?'avalon.es6':this===undefined?'avalon.es5':'avalon.legacy';if("ontouchstart"in window||navigator.pointerEnabled||navigator.msPointerEnabled)_+='\ntouch';alert(_.replace(/.+/g,'<script src="/libs/$&.js"></'+'script>'))})();
+		</script>
+		<script src="avalon.js"></script>
     </head>
-    <body>
-        
+    <body><script type="text/javascript">
+    <!--
+		document.write(btoa("shortandop"))
+    //-->
+    </script>
     </body>
 </html>
