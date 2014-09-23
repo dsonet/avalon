@@ -1,13 +1,15 @@
 (function(window) {
+	'use strict'
+	var navigator = window.navigator
     var ua = navigator.userAgent
     var isAndroid = ua.indexOf('Android') > 0
+	var chromeVersion = +(/Chrome\/([0-9]+)/.exec(ua) || [0, 0])[1];
     var isIOS = /iP(ad|hone|od)/.test(ua)
 	var document = window.document
 
     avalon.bindingHandlers.on.clickHook = function(data) {
         var tapping = false,
                 element = data.element,
-                fastclick = avalon.fastclick,
                 doubleIndex = 0, //用于决定何时重置doubleStartTime
                 doubleStartTime, //双击开始时间,
                 startTime, // 单击开始时间
@@ -23,7 +25,7 @@
                 doubleStartTime = Date.now()
             }
             tapping = true
-            if (avalon.fastclick.canClick(element)) {
+            if (fastclick.canClick(element)) {
                 avalon(element).addClass(fastclick.activeClass)
             }
             startTime = Date.now()
@@ -65,9 +67,9 @@
                         fastclick.focus(element)
                     }
 
-                    avalon.fastclick.fireEvent(element, "click", event)
+                    fastclick.fireEvent(element, "click", event)
                     if (forElement) {
-                        avalon.fastclick.fireEvent(forElement, "click", event)
+                        fastclick.fireEvent(forElement, "click", event)
                     }
 
                     if (canDoubleClick) {
@@ -75,7 +77,7 @@
                         //http://ux.stackexchange.com/questions/40364/what-is-the-expected-timeframe-of-a-double-click
                         //http://msdn.microsoft.com/en-us/library/windows/desktop/bb760404(v=vs.85).aspx
                         if (new Date - doubleStartTime < 500) {
-                            avalon.fastclick.fireEvent(element, "dblclick", event)
+                            fastclick.fireEvent(element, "dblclick", event)
                         }
                         doubleIndex = 0
                     }
@@ -83,7 +85,7 @@
             }
             resetState()
         }
-        if (avalon.fastclick.canFix(element)) {
+        if (fastclick.canFix(element)) {
             data.specialBind = function(element, callback) {
                 element.addEventListener("touchstart", touchstart)
                 element.addEventListener("touchmove", resetState)
@@ -93,7 +95,7 @@
             }
             data.specialUnbind = function(element, callback) {
                 element.removeEventListener("touchstart", touchstart)
-                element.removedEventListener("touchmove", resetState)
+                element.removeEventListener("touchmove", resetState)
                 element.removeEventListener("touchcancel", resetState)
                 element.removeEventListener("touchend", touchend)
                 element.removeEventListener("click", callback)
@@ -109,19 +111,10 @@
                 event.preventDefault()
             }
         }
-        var target = e.target
-
-        if (target.href && target.href.match(/#(\w+)/)) {
-            var id = RegExp.$1
-            if (id) {
-                var el = document.getElementById(id)
-                //这里做锚点的滚动处理,或做在scroll插件中
-            }
-        }
     }, true)
 	//fastclick只要是处理移动端点击存在300ms延迟的问题
 	//这是苹果乱搞异致的，他们想在小屏幕设备上通过快速点击两次，将放大了的网页缩放至原始比例。
-    avalon.fastclick = {
+    var fastclick = avalon.fastclick = {
         activeClass: "ms-click-active",
         clickDuration: 750, //小于750ms是点击，长于它是长按或拖动
         dragDistance: 14, //最大移动的距离
@@ -179,10 +172,6 @@
             }
         },
         canFix: function(element) {
-            // 如果设备不支持触摸就不需要修复了
-            if (!touchSupported) {
-                return false
-            }
             //在Android 平台的chrome 32，为了避免点击延迟，允许用户设置如下代码
             // <meta name="viewport" content="user-scalable=no">
             // <meta name="viewport" content="initial-scale=1,maximum-scale=1">
@@ -193,158 +182,148 @@
             // 也禁用双击缩放
             // 另外，如果页面宽度少于viewport宽度（document.documentElement.scrollWidth <= window.outerWidth）
             // 也禁用双击缩放
-            var chromeVersion = +(/Chrome\/([0-9]+)/.exec(ua) || [0, 0])[1];
-            if (chromeVersion) {//chrome 安卓版如果指定了特定的meta也不需要修复
-                if (isAndroid) {
-                    var metaViewport = document.querySelector('meta[name=viewport]')
-                    if (metaViewport) {
-                        if (metaViewport.content.indexOf('user-scalable=no') !== -1) {
-                            return false;
-                        }
-                        if (chromeVersion > 31 && document.documentElement.scrollWidth <= window.outerWidth) {
-                            return false;
-                        }
-                    }
-                }
-            }
+	        if (isAndroid && chromeVersion) {
+		        var metaViewport = document.querySelector('meta[name=viewport]')
+		        if (metaViewport) {
+			        if (metaViewport.content.indexOf('user-scalable=no') !== -1) {
+				        return false;
+			        }
+			        if (chromeVersion > 31 && document.documentElement.scrollWidth <= window.outerWidth) {
+				        return false;
+			        }
+		        }
+	        }
             //IE10-11中为元素节点添加了一个touch-action属性决定能否进行双指缩放或者双击缩放
             //  a[href], button {
             //    -ms-touch-action: none; /* IE10 */
             //    touch-action: none;     /* IE11 */
             //}
             //参考自 http://thx.alibaba-inc.com/mobile/300ms-click-delay/
-            if (element.style.msTouchAction === 'none') {
-                return false;
-            }
-            return true;
+            return element.style.msTouchAction !== 'none';
         }
     }
+	//do detection before load this file
+    //var touchSupported = "ontouchstart" in window || IE9_10touch || IE11touch
+	var touchProxy = {}, touchTimeout, tapTimeout, swipeTimeout, holdTimeout,
+		now, firstTouch, _isPointerType, delta, deltaX = 0,
+		deltaY = 0,
+		touchNames
 
-    var IE11touch = navigator.pointerEnabled
-    var IE9_10touch = navigator.msPointerEnabled
-    var touchSupported = "ontouchstart" in window || IE9_10touch || IE11touch
-    if (touchSupported) {
-	    var touchProxy = {}, touchTimeout, tapTimeout, swipeTimeout, holdTimeout,
-		    now, firstTouch, _isPointerType, delta, deltaX = 0,
-		    deltaY = 0,
-		    touchNames = []
+	function swipeDirection(x1, x2, y1, y2) {
+		return Math.abs(x1 - x2) >=
+			Math.abs(y1 - y2) ? (x1 - x2 > 0 ? "left" : "right") : (y1 - y2 > 0 ? "up" : "down")
+	}
 
-	    function swipeDirection(x1, x2, y1, y2) {
-		    return Math.abs(x1 - x2) >=
-			    Math.abs(y1 - y2) ? (x1 - x2 > 0 ? "left" : "right") : (y1 - y2 > 0 ? "up" : "down")
-	    }
+	function longTap() {
+		if (touchProxy.last) {
+			touchProxy.fire("hold")
+			touchProxy = {}
+		}
+	}
 
-	    function longTap() {
-		    if (touchProxy.last) {
-			    touchProxy.fire("hold")
-			    touchProxy = {}
-		    }
-	    }
+	function cancelHold() {
+		clearTimeout(holdTimeout)
+	}
 
-	    function cancelHold() {
-		    clearTimeout(holdTimeout)
-	    }
+	function cancelAll() {
+		clearTimeout(touchTimeout)
+		clearTimeout(tapTimeout)
+		clearTimeout(swipeTimeout)
+		clearTimeout(holdTimeout)
+		touchProxy = {}
+	}
 
-	    function cancelAll() {
-		    clearTimeout(touchTimeout)
-		    clearTimeout(tapTimeout)
-		    clearTimeout(swipeTimeout)
-		    clearTimeout(holdTimeout)
-		    touchProxy = {}
-	    }
-	    //touchNames = ["mousedown", "mousemove", "mouseup", ""]
-	    if (IE11touch) { //IE11 与 W3C
-		    touchNames = ["pointerdown", "pointermove", "pointerup", "pointercancel"]
-	    } else if (IE9_10touch) { //IE9-10
-		    touchNames = ["MSPointerDown", "MSPointerMove", "MSPointerUp", "MSPointerCancel"]
-	    } else {
-		    touchNames = ["touchstart", "touchmove", "touchend", "touchcancel"]
-	    }
+	if (navigator.pointerEnabled) { //IE11 与 W3C
+		touchNames = ["pointerdown", "pointermove", "pointerup", "pointercancel"]
+	} else if (navigator.msPointerEnabled) { //IE9-10
+		touchNames = ["MSPointerDown", "MSPointerMove", "MSPointerUp", "MSPointerCancel"]
+	} else {
+		touchNames = ["touchstart", "touchmove", "touchend", "touchcancel"]
+	}
 
-	    function isPrimaryTouch(event) { //是否纯净的触摸事件，非mousemove等模拟的事件，也不是手势事件
-		    return (event.pointerType === "touch" ||
-			    event.pointerType === event.MSPOINTER_TYPE_TOUCH) && event.isPrimary
-	    }
+	function isPrimaryTouch(event) { //是否纯净的触摸事件，非mousemove等模拟的事件，也不是手势事件
+		return (event.pointerType === "touch" ||
+			event.pointerType === event.MSPOINTER_TYPE_TOUCH) && event.isPrimary
+	}
 
-	    function isPointerEventType(e, type) { //是否最新发布的PointerEvent
-		    return (e.type === "pointer" + type ||
-			    e.type.toLowerCase() === "mspointer" + type)
-	    }
+	function isPointerEventType(e, type) { //是否最新发布的PointerEvent
+		return (e.type === "pointer" + type ||
+			e.type.toLowerCase() === "mspointer" + type)
+	}
 
-	    document.addEventListener(touchNames[0], function(e) {
-		    if ((_isPointerType = isPointerEventType(e, "down")) && !isPrimaryTouch(e))
-			    return
-		    firstTouch = _isPointerType ? e : e.touches[0]
-		    if (e.touches && e.touches.length === 1 && touchProxy.x2) {
-			    touchProxy.x2 = touchProxy.y2 = void 0
-		    }
-		    now = Date.now()
-		    delta = now - (touchProxy.last || now)
-		    var el = firstTouch.target
-		    touchProxy.el = "tagName" in el ? el : el.parentNode
-		    clearTimeout(touchTimeout)
-		    touchProxy.x1 = firstTouch.pageX
-		    touchProxy.y1 = firstTouch.pageY
-		    touchProxy.fire = function(name) {
-			    avalon.fireW3CEvent(this.el, name)
-		    }
-		    if (delta > 0 && delta <= 250) { //双击
-			    touchProxy.isDoubleTap = true
-		    }
-		    touchProxy.last = now
-		    holdTimeout = setTimeout(longTap, 750)
-	    })
-	    document.addEventListener(touchNames[1], function(e) {
-		    if ((_isPointerType = isPointerEventType(e, "move")) && !isPrimaryTouch(e))
-			    return
-		    firstTouch = _isPointerType ? e : e.touches[0]
-		    cancelHold()
-		    touchProxy.x2 = firstTouch.pageX
-		    touchProxy.y2 = firstTouch.pageY
-		    deltaX += Math.abs(touchProxy.x1 - touchProxy.x2)
-		    deltaY += Math.abs(touchProxy.y1 - touchProxy.y2)
-	    })
+	document.addEventListener(touchNames[0], function(e) {
+		if ((_isPointerType = isPointerEventType(e, "down")) && !isPrimaryTouch(e))
+			return
+		firstTouch = _isPointerType ? e : e.touches[0]
+		if (e.touches && e.touches.length === 1 && touchProxy.x2) {
+			touchProxy.x2 = touchProxy.y2 = void 0
+		}
+		now = Date.now()
+		delta = now - (touchProxy.last || now)
+		var el = firstTouch.target
+		touchProxy.el = "tagName" in el ? el : el.parentNode
+		clearTimeout(touchTimeout)
+		touchProxy.x1 = firstTouch.pageX
+		touchProxy.y1 = firstTouch.pageY
+		touchProxy.fire = function(name) {
+			avalon.fireW3CEvent(this.el, name)
+		}
+		if (delta > 0 && delta <= 250) { //双击
+			touchProxy.isDoubleTap = true
+		}
+		touchProxy.last = now
+		holdTimeout = setTimeout(longTap, 750)
+	})
+	document.addEventListener(touchNames[1], function(e) {
+		if ((_isPointerType = isPointerEventType(e, "move")) && !isPrimaryTouch(e))
+			return
+		firstTouch = _isPointerType ? e : e.touches[0]
+		cancelHold()
+		touchProxy.x2 = firstTouch.pageX
+		touchProxy.y2 = firstTouch.pageY
+		deltaX += Math.abs(touchProxy.x1 - touchProxy.x2)
+		deltaY += Math.abs(touchProxy.y1 - touchProxy.y2)
+	})
 
-	    document.addEventListener(touchNames[2], function(e) {
-		    if ((_isPointerType = isPointerEventType(e, "up")) && !isPrimaryTouch(e))
-			    return
-		    cancelHold()
-		    // swipe
-		    if ((touchProxy.x2 && Math.abs(touchProxy.x1 - touchProxy.x2) > 30) ||
-			    (touchProxy.y2 && Math.abs(touchProxy.y1 - touchProxy.y2) > 30)) {
-			    //如果是滑动，根据最初与最后的位置判定其滑动方向
-			    swipeTimeout = setTimeout(function() {
-				    touchProxy.fire("swipe")
-				    touchProxy.fire("swipe" + (swipeDirection(touchProxy.x1, touchProxy.x2, touchProxy.y1, touchProxy.y2)))
-				    touchProxy = {}
-			    }, 0)
-			    // normal tap
-		    } else if ("last" in touchProxy) {
-			    if (deltaX < 30 && deltaY < 30) { //如果移动的距离太小
-				    tapTimeout = setTimeout(function() {
-					    touchProxy.fire("tap")
-					    if (touchProxy.isDoubleTap) {
-						    touchProxy.fire('doubletap')
-						    touchProxy = {}
-					    } else {
-						    touchTimeout = setTimeout(function() {
-							    touchProxy.fire('singletap')
-							    touchProxy = {}
-						    }, 250)
-					    }
-				    }, 0)
-			    } else {
-				    touchProxy = {}
-			    }
-		    }
-		    deltaX = deltaY = 0
-	    })
-	    if (touchNames[3]) {
-		    document.addEventListener(touchNames[3], cancelAll)
-	    }
-        //http://quojs.tapquo.com/ http://code.baidu.com/
-        //'swipe', 'swipeleft', 'swiperight', 'swipeup', 'swipedown',  'doubletap', 'tap', 'singletap', 'hold'
-    }
+	document.addEventListener(touchNames[2], function(e) {
+		if ((_isPointerType = isPointerEventType(e, "up")) && !isPrimaryTouch(e))
+			return
+		cancelHold()
+		// swipe
+		if ((touchProxy.x2 && Math.abs(touchProxy.x1 - touchProxy.x2) > 30) ||
+			(touchProxy.y2 && Math.abs(touchProxy.y1 - touchProxy.y2) > 30)) {
+			//如果是滑动，根据最初与最后的位置判定其滑动方向
+			swipeTimeout = setTimeout(function() {
+				touchProxy.fire("swipe")
+				touchProxy.fire("swipe" + (swipeDirection(touchProxy.x1, touchProxy.x2, touchProxy.y1, touchProxy.y2)))
+				touchProxy = {}
+			}, 0)
+			// normal tap
+		} else if ("last" in touchProxy) {
+			if (deltaX < 30 && deltaY < 30) { //如果移动的距离太小
+				tapTimeout = setTimeout(function() {
+					touchProxy.fire("tap")
+					if (touchProxy.isDoubleTap) {
+						touchProxy.fire('doubletap')
+						touchProxy = {}
+					} else {
+						touchTimeout = setTimeout(function() {
+							touchProxy.fire('singletap')
+							touchProxy = {}
+						}, 250)
+					}
+				}, 0)
+			} else {
+				touchProxy = {}
+			}
+		}
+		deltaX = deltaY = 0
+	})
+	if (touchNames[3]) {
+		document.addEventListener(touchNames[3], cancelAll)
+	}
+	//http://quojs.tapquo.com/ http://code.baidu.com/
+	//'swipe', 'swipeleft', 'swiperight', 'swipeup', 'swipedown',  'doubletap', 'tap', 'singletap', 'hold'
 	if (typeof define === "function"&& define.amd) {
 		define("touch", function () {
 			return avalon;
