@@ -8,7 +8,7 @@
  avalon 1.3.5 2014.9.15
  ==================================================*/
 //var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true, DEBUG = true;
-//CODE STYLE: 全大写表示声明常量
+//代码规范: 全大写表示声明常量，TabWidth = 4
 (function(window) {
 	/*********************************************************************
 	 *                    全局变量及方法                                  *
@@ -582,6 +582,26 @@
 		}
 	}
 
+	/**
+	 * 判断对象中是否存在给定的属性序列，例如 obj.user.age
+	 * @param obj 要判定的对象 上例中为obj
+	 * @param array 属性序列 上例中为['user', 'age']
+	 * @returns {number} 0:不存在,1:部分存在(如给定['user','age','birthday']) 2:存在
+	 */
+	function inObject(obj, array) {
+		//Old IE Node doesn't have this method
+		if (LEGACY && !obj.hasOwnProperty || !obj.hasOwnProperty(array[0])) {
+			return 0
+		}
+		for (var i = 1, el; el = array[i++];) {
+			if (!obj.hasOwnProperty(el)) {
+				return (obj && typeof obj === "object") ? 1 : 0
+			} else {
+				obj = obj[el]
+			}
+		}
+		return 2
+	}
 	if (ES6) {
 		var observeCallback = avalon.observeCallback = function(changes) {
 			changes.forEach(function(change) {
@@ -609,13 +629,11 @@
 		}
 
 		function isObservable(name, value, $skipArray) {
-			if (typeof value === "function"
+			return !(typeof value === "function"
 				|| (value && value.nodeType)
 				|| $skipArray.indexOf(name) !== -1
-				|| name[0] === "$" && !$skipArray.opposite[name]) {
-				return false
-			}
-			return true
+				|| name[0] === "$" && !$skipArray.opposite[name])
+
 		}
 
 		function addDeps(scope, prop, data) {
@@ -625,20 +643,6 @@
 				var arr = obj[prop] || (obj[prop] = [])
 				avalon.Array.ensure(arr, data)
 			}
-		}
-
-		function inObject(obj, array) {
-			if (!obj.hasOwnProperty(array[0])) {
-				return 0
-			}
-			for (var i = 1, el; el = array[i++];) {
-				if (!obj.hasOwnProperty(el)) {
-					return (obj && typeof obj === "object") ? 1 : 0
-				} else {
-					obj = obj[el]
-				}
-			}
-			return 2
 		}
 	}
 	else {
@@ -938,15 +942,14 @@
 		/*********************************************************************
 		 *                         javascript 底层补丁                       *
 		 **********************************************************************/
-		if (!"司徒正美".trim) {
-			var rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g
+		if (!"".trim) {
+			var STR_TRIM_RE = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g
 			String.prototype.trim = function() {
-				return this.replace(rtrim, "")
+				return this.replace(STR_TRIM_RE, "")
 			}
 		}
 		var hasDontEnumBug = !({'toString': null}).propertyIsEnumerable('toString'),
-			hasProtoEnumBug = (function() {
-			}).propertyIsEnumerable('prototype'),
+			hasProtoEnumBug = noop.propertyIsEnumerable('prototype'),
 			dontEnums = [
 				"toString",
 				"toLocaleString",
@@ -1589,24 +1592,24 @@
 		}
 	})
 
-	var cssShow = {
+	var CSS_DISPLAYS = {
 		position: "absolute",
 		visibility: "hidden",
 		display: "block"
 	}
 
-	var rdisplayswap = /^(none|table(?!-c[ea]).+)/
+	var CSS_DISPLAY_RE = /^(none|table(?!-c[ea]).+)/
 
 	function showHidden(node, array) {
 		//http://www.cnblogs.com/rubylouvre/archive/2012/10/27/2742529.html
 		if (node.offsetWidth <= 0) { //opera.offsetWidth可能小于0
-			if (rdisplayswap.test(cssHooks["@:get"](node, "display"))) {
+			if (CSS_DISPLAY_RE.test(cssHooks["@:get"](node, "display"))) {
 				var obj = {
 					node: node
 				}
-				for (var name in cssShow) {
+				for (var name in CSS_DISPLAYS) {
 					obj[name] = node.style[name]
-					node.style[name] = cssShow[name]
+					node.style[name] = CSS_DISPLAYS[name]
 				}
 				array.push(obj)
 			}
@@ -1988,7 +1991,7 @@
 						data.node.data = openTag + data.value + closeTag
 					}
 				}
-				DEBUG && log.warn("evaluator of [" + data.value + "] catched error", data)
+				DEBUG && log.warn("evaluate of [" + data.value + "] catched error", data, ex)
 			}
 		} else { //如果是计算属性的accessor
 			data()
@@ -2403,7 +2406,7 @@
 	/*********************************************************************
 	 *                          编译系统                                  *
 	 **********************************************************************/
-	// 静态分析模板变量
+	// 静态分析变量
 	var KEYWORDS =
 		// 关键字
 		'break,case,catch,continue,debugger,default,delete,do,else,false'
@@ -2420,28 +2423,37 @@
 		+ ',arguments,let,yield'
 
 		+ ',undefined'
+	var OBJ_PROP_RE = /([\w\.\_$])\s*\[['"]([^'"]+)['"]\]/
 	//处理注释及字符串
-	var REMOVE_RE = /\/\*[\w\W]*?\*\/|\/\/[^\n]*\n|\/\/[^\n]*$|"(?:[^"\\]|\\[\w\W])*"|'(?:[^'\\]|\\[\w\W])*'|\s*\.\s*[$\w\.]+/g
-	var SPLIT_RE = /[^\w$]+/g
+	var STR_AND_COMMENT_RE = /\/\*[\w\W]*?\*\/|\/\/[^\n]*\n|\/\/[^\n]*$|"(?:[^"\\]|\\[\w\W])*"|'(?:[^'\\]|\\[\w\W])*'/g
+	//处理加减乘除小括号等运算符
+	var OPERATOR_RE = /[^\w\.$]+/g
+	//处理数字
+	var NUMBER_RE = /\b\d[^,]*/g
+	//处理最前面或最后面逗号
+	var COMMA_BOUNDARY_RE = /^,+|,+$/g
+	//处理位于中间的逗号
+	var COMMA_RE = /,+/
+	//去掉所有关键字保留字
 	var KEYWORDS_RE = new RegExp(["\\b" + KEYWORDS.replace(/,/g, '\\b|\\b') + "\\b"].join('|'), 'g')
-	//处理数字常量
-	var NUMBER_RE = /^\d[^,]*|,\d[^,]*/g
-	//起始和末尾的逗号
-	var BOUNDARY_RE = /^,+|,+$/g
-	var SPLIT2_RE = /^$|,+/
 	var cacheVars = createCache(512)
-	var getVariables = function(code) {
-		var key = "," + code.trim(), vars
+	function propVisitor(match, obj, prop) {
+				return obj + '.' + prop;
+	}
+	function getVariables(code) {
+		var key = "," + code.trim()
 		if (cacheVars[key]) {
 			return cacheVars[key]
 		}
-		vars = code
-			.replace(REMOVE_RE, '')
-			.replace(SPLIT_RE, ',')
-			.replace(KEYWORDS_RE, '')
-			.replace(NUMBER_RE, '')
-			.replace(BOUNDARY_RE, '')
-			.split(SPLIT2_RE)
+		while (OBJ_PROP_RE.test(code)) {
+			code = code.replace(OBJ_PROP_RE, propVisitor)
+		}
+		var vars = code.replace(STR_AND_COMMENT_RE, "")
+				.replace(OPERATOR_RE, ",")
+				.replace(KEYWORDS_RE, ",")
+				.replace(NUMBER_RE, ",")
+				.replace(COMMA_BOUNDARY_RE, "")
+				.split(COMMA_RE)
 		return cacheVars(key, uniqSet(vars))
 	}
 
@@ -2450,41 +2462,38 @@
 		var ret = [],
 			prefix = " = " + name + "."
 		for (var i = vars.length, prop; prop = vars[--i];) {
-			if (ES6) {
-				var arr = prop.split(".")
-				var flag = inObject(scope, arr)
-				if (flag) {
-					var prop = arr.shift()
+			var arr = prop.split(".")
+			var flag = inObject(scope, arr)
+			if (flag) {
+				var propN = arr.shift()
+				ret.push(propN + prefix + propN)
+				if (data.type === "duplex") {
+					vars.get = name + "." + prop
+				}
+				if (ES6) {
 					addDeps(scope, SUBSCRIBES, data)
-					ret.push(prop + prefix + prop)
-					if (data.type === "duplex") {
-						vars.get = name + "." + prop
-					}
 					var subscope = scope
 					do{//处理子对象
-						subscope = subscope[prop]
+						propN = arr.shift()
+						subscope = subscope[propN]
 						if (subscope && typeof subscope === "object") {
 							addDeps(subscope, SUBSCRIBES, data)
-							prop = arr.shift()
+							
 						} else {
 							break
 						}
 					} while (arr.length);
-					if (flag === 2)
-						vars.splice(i, 1)
 				}
-			}
-			else {
-				if (LEGACY && scope.hasOwnProperty && scope.hasOwnProperty(prop) || !LEGACY && scope.hasOwnProperty(prop)) { //IE6下节点没有hasOwnProperty
-					ret.push(prop + prefix + prop)
-					if (data.type === "duplex") {
-						vars.get = name + "." + prop
+				else {
+					if(arr.length) {
+						ret.push(prop.replace(/\./g, '$') + prefix + prop)
 					}
-					vars.splice(i, 1)
 				}
+				if (flag === 2)
+					vars.splice(i, 1)
 			}
 		}
-		return ret
+		return uniqSet(ret)
 	}
 
 	var uniqSet = function(array) {
@@ -2880,7 +2889,7 @@
 				var group = data.group
 				var parent = data.startRepeat ? data.startRepeat.parentNode : data.callbackElement// //fix  #300 #307
 				var proxies = data.proxies
-				var transation = hyperspace.cloneNode(false)
+				var transition = hyperspace.cloneNode(false)
 				if (method === "del" || method === "move") {
 					var locatedNode = getLocatedNode(parent, data, pos)
 				}
@@ -2894,12 +2903,12 @@
 							var ii = i + pos
 							var proxy = getEachProxy(ii, arr[i], data, last)
 							proxies.splice(ii, 0, proxy)
-							lastFn = shimController(data, transation, spans, proxy)
+							lastFn = shimController(data, transition, spans, proxy)
 						}
 						locatedNode = getLocatedNode(parent, data, pos)
 						lastFn.node = locatedNode
 						lastFn.parent = parent
-						parent.insertBefore(transation, locatedNode)
+						parent.insertBefore(transition, locatedNode)
 						for (var i = 0, node; node = spans[i++];) {
 							scanTag(node, data.vmodels)
 						}
@@ -2923,24 +2932,24 @@
 							while (true) {
 								var node = data.startRepeat.nextSibling
 								if (node && node !== data.endRepeat) {
-									transation.appendChild(node)
+									transition.appendChild(node)
 								} else {
 									break
 								}
 							}
 						} else {
-							transation = parent
+							transition = parent
 						}
 						recycleEachProxies(proxies)
-						expelFromSanctuary(transation)
+						expelFromSanctuary(transition)
 						break
 					case "move": //将proxies中的第pos个元素移动el位置上(pos, el都是数字)
 						var t = proxies.splice(pos, 1)[0]
 						if (t) {
 							proxies.splice(el, 0, t)
-							transation = removeView(locatedNode, group)
+							transition = removeView(locatedNode, group)
 							locatedNode = getLocatedNode(parent, data, el)
-							parent.insertBefore(transation, locatedNode)
+							parent.insertBefore(transition, locatedNode)
 						}
 						break
 					case "set": //将proxies中的第pos个元素的VM设置为el（pos为数字，el任意）
@@ -2968,12 +2977,12 @@
 						}
 						for (var i = 0, key; key = keys[i++];) {
 							if (key !== "hasOwnProperty") {
-								lastFn = shimController(data, transation, spans, pool[key])
+								lastFn = shimController(data, transition, spans, pool[key])
 							}
 						}
 						lastFn.parent = parent
 						lastFn.node = data.endRepeat || null
-						parent.insertBefore(transation, lastFn.node)
+						parent.insertBefore(transition, lastFn.node)
 						for (var i = 0, el; el = spans[i++];) {
 							scanTag(el, data.vmodels)
 						}
@@ -3259,14 +3268,17 @@
 			data.callbackName = "data-" + type + "-rendered"
 			data.handler = bindingExecutors.repeat
 			data.$outer = {}
-			var check0 = "$key",
-				check1 = "$val"
+			var prop1, prop2
 			if (Array.isArray(list)) {
-				check0 = "$first"
-				check1 = "$last"
+				prop1 = "$first"
+				prop2 = "$last"
+			}
+			else {
+				prop1 = "$key"
+				prop2 = "$val"
 			}
 			for (var i = 0, p; p = vmodels[i++];) {
-				if (p.hasOwnProperty(check0) && p.hasOwnProperty(check1)) {
+				if (p.hasOwnProperty(prop1) && p.hasOwnProperty(prop2)) {
 					data.$outer = p
 					break
 				}
@@ -3556,7 +3568,7 @@
 	var TimerID, ribbon = [],
 		launch = noop
 
-	function isW3CFire(el, name, detail) {
+	function fireW3CEvent(el, name, detail) {
 		var event = document.createEvent("Events")
 		event.initEvent(name, true, true)
 		if (detail) {
@@ -3564,11 +3576,12 @@
 		}
 		el.dispatchEvent(event)
 	}
+	avalon.fireW3CEvent = fireW3CEvent
 
 	function onTree() { //disabled状态下改动不触发input事件
 		if (!this.disabled && this.oldValue !== this.value) {
 			if (LEGACY && isW3C || !LEGACY) {
-				isW3CFire(this, "input")
+				fireW3CEvent(this, "input")
 			} else {
 				this.fireEvent("onchange")
 			}
@@ -3596,7 +3609,7 @@
 	function newSetter(newValue) {
 		oldSetter.call(this, newValue)
 		if (newValue !== this.oldValue) {
-			isW3CFire(this, "input")
+			fireW3CEvent(this, "input")
 		}
 	}
 
@@ -4059,7 +4072,7 @@
 		}
 	}
 	//为ms-each, ms-with, ms-repeat要循环的元素外包一个msloop临时节点，ms-controller的值为代理VM的$id
-	function shimController(data, transation, spans, proxy) {
+	function shimController(data, transition, spans, proxy) {
 		var tview = isIE ? fixCloneNode(data.template) : data.template.cloneNode(true)
 		var id = proxy.$id
 		var span = tview.firstChild
@@ -4072,7 +4085,7 @@
 		span.removeAttribute(data.callbackName)
 		span.removeAttribute("data-with-sorted")
 		spans.push(span)
-		transation.appendChild(span)
+		transition.appendChild(span)
 		proxy.$outer = data.$outer
 		VMODELS[id] = proxy
 
@@ -4083,10 +4096,10 @@
 				data.group = span.childNodes.length
 				ES6 ? span.remove() : span.parentNode.removeChild(span)
 				while (span.firstChild) {
-					transation.appendChild(span.firstChild)
+					transition.appendChild(span.firstChild)
 				}
 				if (fn.node !== undefined) {
-					fn.parent.insertBefore(transation, fn.node)
+					fn.parent.insertBefore(transition, fn.node)
 				}
 			}
 		}
@@ -4161,7 +4174,7 @@
 		}
 		source[param] = item
 		for (var i = 0, n = eachProxyPool.length; i < n; i++) {
-			var proxy = eachProxyPool[i]
+			proxy = eachProxyPool[i]
 			if (proxy.hasOwnProperty(param)) {
 				for (var k in source) {
 					proxy[k] = source[k]
@@ -4268,7 +4281,7 @@
 				prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
 				sep = thousands_sep || ",",
 				dec = dec_point || ".",
-				s = "",
+				s,
 				toFixedFix = function(n, prec) {
 					var k = Math.pow(10, prec)
 					return "" + Math.round(n * k) / k

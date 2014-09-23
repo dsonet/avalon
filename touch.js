@@ -286,7 +286,7 @@
 		    touchProxy.x1 = firstTouch.pageX
 		    touchProxy.y1 = firstTouch.pageY
 		    touchProxy.fire = function(name) {
-			    W3CFire(this.el, name)
+			    avalon.fireW3CEvent(this.el, name)
 		    }
 		    if (delta > 0 && delta <= 250) { //双击
 			    touchProxy.isDoubleTap = true
