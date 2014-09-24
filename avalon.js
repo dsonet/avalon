@@ -7,13 +7,12 @@
  Released under the MIT license
  avalon 1.3.5 2014.9.15
  ==================================================*/
-//var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true, DEBUG = true;
+var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true, FILTERS = true, DEBUG = true;
 //代码规范: 全大写表示声明常量，TabWidth = 4
 (function(window) {
 	/*********************************************************************
 	 *                    全局变量及方法                                  *
 	 **********************************************************************/
-	var PREFIX = "ms-"
 	var EXPOSE = LEGACY ? new Date - 0 : Date.now()
 	var SUBSCRIBES = "$" + EXPOSE
 	var undefined
@@ -26,7 +25,7 @@
 	var SVG_ELEMENT_RE = /^\[object SVG\w*Element\]$/
 	var WINDOW_RE = /^\[object (?:Window|DOMWindow|global)\]$/
 	var oProp = Object.prototype
-	var ohasOwn = oProp.hasOwnProperty
+	var oHasOwn = oProp.hasOwnProperty
 	var serialize = oProp.toString
 	var aProp = Array.prototype
 	var aSlice = aProp.slice
@@ -128,7 +127,7 @@
 				return false;
 			}
 			try {//IE内置对象没有constructor
-				if (obj.constructor && !ohasOwn.call(obj, "constructor") && !ohasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
+				if (obj.constructor && !oHasOwn.call(obj, "constructor") && !oHasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
 					return false;
 				}
 			} catch (ex) {//IE8 9会在这里抛错
@@ -136,7 +135,7 @@
 			}
 			for (var key in obj) {
 			}
-			return key === undefined || ohasOwn.call(obj, key);
+			return key === undefined || oHasOwn.call(obj, key);
 		}
 	}
 	//与jQuery.extend方法，可用于浅拷贝，深拷贝
@@ -201,6 +200,7 @@
 		return a < 0 ? Math.max(len + a, 0) : Math.min(a, len);
 	}
 
+	var ALPHANUMERIC_RE = /\w/g;
 	avalon.mix({
 		STR_LIST_RE: STR_LIST_RE,
 		SUBSCRIBES: SUBSCRIBES,
@@ -316,7 +316,7 @@
 			} else if (value === "") { //请除样式
 				node.style[name] = ""
 			} else { //设置样式
-				if (value == null || value !== value) {
+				if (value === null || value !== value) {
 					return
 				}
 				if (isFinite(value) && !avalon.cssNumber[prop]) {
@@ -349,9 +349,7 @@
 			var result = {}
 			for (var i in raw) {
 				if (i.indexOf(prefix) === 0) {
-					result[i.replace(prefix, "").replace(/\w/, function(a) {
-						return a.toLowerCase()
-					})] = raw[i]
+					result[i.replace(prefix, "").replace(ALPHANUMERIC_RE, lowercase)] = raw[i]
 				}
 			}
 			return result
@@ -975,7 +973,7 @@
 					}
 				} else {
 					for (var name in object) {
-						if (!(skipProto && name === "prototype") && ohasOwn.call(object, name)) {
+						if (!(skipProto && name === "prototype") && oHasOwn.call(object, name)) {
 							theKeys.push(String(name))
 						}
 					}
@@ -986,7 +984,7 @@
 						skipConstructor = ctor && ctor.prototype === object;
 					for (var j = 0; j < dontEnumsLength; j++) {
 						var dontEnum = dontEnums[j]
-						if (!(skipConstructor && dontEnum === "constructor") && ohasOwn.call(object, dontEnum)) {
+						if (!(skipConstructor && dontEnum === "constructor") && oHasOwn.call(object, dontEnum)) {
 							theKeys.push(dontEnum)
 						}
 					}
@@ -1162,7 +1160,7 @@
 	 **********************************************************************/
 	var config = avalon.config = function(settings) {
 		for (var p in settings) {
-			if (!ohasOwn.call(settings, p))
+			if (!oHasOwn.call(settings, p))
 				continue
 			var val = settings[p]
 			if (typeof config.plugins[p] === "function") {
@@ -1188,14 +1186,14 @@
 		openTag = array[0]
 		closeTag = array[1]
 		if (openTag === closeTag) {
-			throw SyntaxError("openTag不能和closeTag相同")
+			throw new SyntaxError("openTag不能和closeTag相同")
 		} else if (array + "" === "<!--,-->") {
 			config.commentInterpolate = true
 		} else {
 			var test = openTag + "test" + closeTag
 			cinerator.innerHTML = test
 			if (cinerator.innerHTML !== test && cinerator.innerHTML.indexOf("&lt;") >= 0) {
-				throw SyntaxError(test + "定界符不合法")
+				throw new SyntaxError(test + "定界符不合法")
 			}
 			cinerator.innerHTML = ""
 		}
@@ -1437,29 +1435,27 @@
 		try {
 			data = data === "true" ? true :
 					data === "false" ? false :
-					data === "null" ? null : +data + "" === data ? +data : rbrace.test(data) ? avalon.parseJSON(data) : data
+					data === "null" ? null : +data + "" === data ? +data : BRACE_RE.test(data) ? avalon.parseJSON(data) : data
 		} catch (ex) {
 		}
 		return data
 	}
 
-	var rbrace = /(?:\{[\s\S]*\}|\[[\s\S]*\])$/
+	var BRACE_RE = /(?:\{[\s\S]*\}|\[[\s\S]*\])$/
 	if (LEGACY) {
-		var rvalidchars = /^[\],:{}\s]*$/,
-			rvalidbraces = /(?:^|:|,)(?:\s*\[)+/g,
-			rvalidescape = /\\(?:["\\\/bfnrt]|u[\da-fA-F]{4})/g,
-			rvalidtokens = /"[^"\\\r\n]*"|true|false|null|-?(?:\d+\.|)\d+(?:[eE][+-]?\d+|)/g
+		var VALID_CHARS_RE = /^[\],:{}\s]*$/,
+			VALID_BRACES_RE = /(?:^|:|,)(?:\s*\[)+/g,
+			VALID_ESCAPE_RE = /\\(?:["\\\/bfnrt]|u[\da-fA-F]{4})/g,
+			VALID_TOKENS_RE = /"[^"\\\r\n]*"|true|false|null|-?(?:\d+\.|)\d+(?:[eE][+-]?\d+|)/g
 		avalon.parseJSON = window.JSON ? JSON.parse : function(data) {
 			if (typeof data === "string") {
 				data = data.trim();
-				if (data) {
-					if (rvalidchars.test(data.replace(rvalidescape, "@")
-						.replace(rvalidtokens, "]")
-						.replace(rvalidbraces, ""))) {
-						return (new Function("return " + data))();
-					}
+				if (data && VALID_CHARS_RE.test(data.replace(VALID_ESCAPE_RE, "@")
+					.replace(VALID_TOKENS_RE, "]")
+					.replace(VALID_BRACES_RE, ""))) {
+					return (new Function("return " + data))();
 				}
-				throw Error("Invalid JSON: " + data)
+				throw new Error("Invalid JSON: " + data)
 			}
 		}
 	} else {
@@ -1734,15 +1730,15 @@
 		return ret === "input" && /checkbox|radio/.test(el.type) ? "checked" : ret
 	}
 
-	var roption = /^<option(?:\s+\w+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)*\s+value[\s=]/i
+	var TAG_OPTION_RE = /^<option(?:\s+\w+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)*\s+value[\s=]/i
 	var valHooks = {
 		"option:get": function(node) {
-			//在IE11及isW3C，如果没有指定value，那么node.value默认为node.text（存在trim作），但IE9-10则是取innerHTML(没trim操作)
+			//在IE11及isW3C，如果没有指定value，那么node.value默认为node.text（有trim操作），但IE9-10则是取innerHTML(没trim操作)
 			if (node.hasAttribute) {
 				return node.hasAttribute("value") ? node.value : node.text.trim()
 			}
 			//specified并不可靠，因此通过分析outerHTML判定用户有没有显示定义value
-			return roption.test(node.outerHTML) ? node.value : node.text
+			return TAG_OPTION_RE.test(node.outerHTML) ? node.value : node.text
 		},
 		"select:get": function(node, value) {
 			var option, options = node.options,
@@ -1826,15 +1822,16 @@
 		}
 		wrapper.innerHTML = wrap[1] + html + (wrap[2] || "")
 		var els = wrapper.getElementsByTagName("script")
+		var i, el
 		if (els.length) { //使用innerHTML生成的script节点不会发出请求与执行text属性
-			for (var i = 0, el; el = els[i++];) {
+			for (i = 0; el = els[i++];) {
 				if (!el.type || scriptTypes[el.type]) { //如果script节点的MIME能让其执行脚本
 					neo = script.cloneNode(false) //FF不能省略参数
-					aProp.forEach.call(el.attributes, function(attr) {
+					for (var k = 0, attr; attr = el.attributes[k++];) {
 						if (attr && attr.specified) {
 							neo[attr.name] = attr.value //复制其属性
 						}
-					})
+					}
 					neo.text = el.text //必须指定,因为无法在attributes中遍历出来
 					el.parentNode.replaceChild(neo, el) //替换节点
 				}
@@ -1915,17 +1912,18 @@
 			var callbacks = events[type] || []
 			var all = events.$all || []
 			var args = aSlice.call(arguments, 1)
-			for (var i = 0, callback; callback = callbacks[i++];) {
+			var i, callback
+			for (i = 0; callback = callbacks[i++];) {
 				callback.apply(this, args)
 			}
-			for (var i = 0, callback; callback = all[i++];) {
+			for (i = 0; callback = all[i++];) {
 				callback.apply(this, arguments)
 			}
 			var element = events.expr && findNode(events.expr)
 			if (element) {
 				var detail = [type].concat(args)
 				if (special === "up" || special === "down" || special === "all") {
-					for (var i in avalon.vmodels) {
+					for (i in avalon.vmodels) {
 						var v = avalon.vmodels[i]
 						if (v && v.$events && v.$events.expr) {
 							if (v !== this) {
@@ -1944,7 +1942,7 @@
 					}
 					var nodes = LEGACY ? document.getElementsByTagName("*") : document.querySelectorAll("[avalonctrl]");//实现节点排序
 					var alls = []
-					Array.prototype.forEach.call(nodes, function(el) {
+					aProp.forEach.call(nodes, function(el) {
 						if (el._avalon) {
 							alls.push(el._avalon)
 							el._avalon = ""
@@ -1961,11 +1959,11 @@
 			}
 		}
 	}
-	var ravalon = /(\w+)\[(avalonctrl)="(\S+)"\]/
+	var AVALON_CTRL_RE = /(\w+)\[(avalonctrl)="(\S+)"\]/
 	var findNode = document.querySelector ? function(str) {
 		return  document.querySelector(str)
 	} : function(str) {
-		var match = str.match(ravalon)
+		var match = str.match(AVALON_CTRL_RE)
 		var all = document.getElementsByTagName(match[1])
 		for (var i = 0, el; el = all[i++];) {
 			if (el.getAttribute(match[2]) === match[3]) {
@@ -1976,7 +1974,7 @@
 	/*********************************************************************
 	 *                           依赖调度系统                             *
 	 **********************************************************************/
-	var ronduplex = /^(duplex|on)$/
+	var DUPLEX_ON_RE = /^(duplex|on)$/
 
 	function registerSubscriber(data) {
 		!ES6 && (currentComputeFn = data) //暴光此函数,方便collectSubscribers收集
@@ -1984,7 +1982,7 @@
 		var fn = data.evaluator
 		if (fn) { //如果是求值函数
 			try {
-				var c = ronduplex.test(data.type) ? data : fn.apply(0, data.args)
+				var c = DUPLEX_ON_RE.test(data.type) ? data : fn.apply(0, data.args)
 				data.handler(c, data.element, data)
 			} catch (ex) {
 				delete data.evaluator
@@ -2088,11 +2086,10 @@
 			}, interval)
 	}
 
-
-	function scanTag(elem, vmodels, node) {
+	function scanTag(elem, vmodels) {
 		//扫描顺序  ms-skip(0) --> ms-important(1) --> ms-controller(2) --> ms-if(10) --> ms-repeat(100) 
 		//--> ms-if-loop(110) --> ms-attr(970) ...--> ms-each(1400)-->ms-with(1500)--〉ms-duplex(2000)垫后
-		var a = elem.getAttribute(PREFIX + "skip")
+		var a = elem.getAttribute("ms-skip")
 		if (LEGACY) {
 			//#360 在旧式IE中 Object标签在引入Flash等资源时,可能出现没有getAttributeNode,innerHTML的情形
 			if (!elem.getAttributeNode) {
@@ -2103,20 +2100,21 @@
 		if (typeof a === "string") {
 			return
 		}
-		var b = elem.getAttributeNode(PREFIX + "important")
-		var c = elem.getAttributeNode(PREFIX + "controller")
-		if (node = b || c) {
-			var newVmodel = vmRegistry[node.value]
-			if (!newVmodel) {
+		var b = elem.getAttributeNode("ms-important")
+		var c = elem.getAttributeNode("ms-controller")
+		var node = b || c
+		if (node) {
+			var vm = vmRegistry[node.value]
+			if (!vm) {
 				return
 			}
 			//ms-important不包含父VM，ms-controller相反
-			vmodels = node === b ? [newVmodel] : [newVmodel].concat(vmodels)
+			vmodels = node === b ? [vm] : [vm].concat(vmodels)
 			var name = node.name;
 			elem.removeAttribute(name) //removeAttributeNode不会刷新[ms-controller]样式规则
 			LEGACY ? avalon(elem).removeClass(node.name) : elem.classList.remove(node.name)
 			elem.setAttribute("avalonctrl", node.value)
-			newVmodel.$events.expr = elem.tagName + '[avalonctrl="' + node.value + '"]'
+			vm.$events.expr = elem.tagName + '[avalonctrl="' + node.value + '"]'
 		}
 		scanAttr(elem, vmodels) //扫描特性节点
 	}
@@ -2142,14 +2140,15 @@
 		if (textNode.nodeType === 8) {
 			var leach = []
 			var value = trimFilter(textNode.nodeValue, leach)
-			var token = {
-				expr: true,
-				value: value
-			}
 			if (leach.length) {
 				token.filters = leach
 			}
-			var tokens = [token]
+			var tokens = [
+				{
+					expr: true,
+					value: value
+				}
+			]
 		} else {
 			tokens = scanExpr(textNode.data)
 		}
@@ -2541,25 +2540,27 @@
 	var cacheExprs = createCache(128)
 	//根据一段文本与一堆VM，转换为对应的求值函数及匹配的VM(解释器模式)
 	//取得求值函数及其传参
-	var rduplex = /\w\[.*\]|\w\.\w/
-	var rproxy = /(\$proxy\$[a-z]+)\d+$/
+	var DUPLEX_RE = /\w\[.*\]|\w\.\w/
+	var PROXY_RE = /(\$proxy\$[a-z]+)\d+$/
+
+	function getExprId(el) {
+		return el.$id.replace(PROXY_RE, "$1")
+	}
 
 	function parseExpr(code, scopes, data) {
 		var dataType = data.type
 		var filters = dataType === "html" || dataType === "text" ? data.filters || "" : ""
-		var exprId = scopes.map(function(el) {
-			return el.$id.replace(rproxy, "$1")
-		}) + code + dataType + filters
+		var exprId = scopes.map(getExprId) + code + dataType + filters
 		var vars = getVariables(code).concat(),
 			assigns = [],//收集赋值表达式
 			names = [],
 			args = [],//新生成的求值函数的传参 包括所有VM与avalon.filters对象
-			prefix = ""
+			prefix, i, name, sn, filterName
 		//args 是一个对象数组， names 是将要生成的求值函数的参数
 		scopes = uniqSet(scopes)
 		if (vars.length) {
-			for (var i = 0, sn = scopes.length; i < sn; i++) {
-				var name = "vm" + EXPOSE + "_" + i
+			for (i = 0, sn = scopes.length; i < sn; i++) {
+				name = "vm" + EXPOSE + "_" + i
 				names.push(name)
 				args.push(scopes[i])
 				assigns.push.apply(assigns, addAssign(vars, scopes[i], name, data))
@@ -2579,26 +2580,25 @@
 			data.evaluator = fn
 			return
 		}
-		var prefix = assigns.join(", ")
+		prefix = assigns.join(", ")
 		if (prefix) {
 			prefix = "var " + prefix
 		}
 		if (filters) { //文本绑定，双工绑定才有过滤器
 			code = "\nvar ret" + EXPOSE + " = " + code
 			var textBuffer = [],
-				fargs
+				filterArgs
 			textBuffer.push(code, "\r\n")
-			for (var i = 0, fname; fname = data.filters[i++];) {
-				var start = fname.indexOf("(")
+			for (i = 0; filterName = data.filters[i++];) {
+				var start = filterName.indexOf("(")
 				if (start !== -1) {
-					fargs = fname.slice(start + 1, fname.lastIndexOf(")")).trim()
-					fargs = "," + fargs
-					fname = fname.slice(0, start).trim()
+					filterArgs = "," + filterName.slice(start + 1, filterName.lastIndexOf(")")).trim()
+					filterName = filterName.slice(0, start).trim()
 				} else {
-					fargs = ""
+					filterArgs = ""
 				}
-				textBuffer.push(" if(filters", EXPOSE, ".", fname, "){\n\ttry{\nret", EXPOSE,
-					" = filters", EXPOSE, ".", fname, "(ret", EXPOSE, fargs, ")\n\t}catch(ex){} \n}\n")
+				textBuffer.push(" if(filters", EXPOSE, ".", filterName, "){\n\ttry{\nret", EXPOSE,
+					" = filters", EXPOSE, ".", filterName, "(ret", EXPOSE, filterArgs, ")\n\t}catch(ex){} \n}\n")
 			}
 			code = textBuffer.join("")
 			code += "\nreturn ret" + EXPOSE
@@ -2608,7 +2608,7 @@
 				prefix +
 				";\n\tif(!arguments.length){\n\t\treturn " +
 				code +
-				"\n\t}\n\t" + (!rduplex.test(code) ? vars.get : code) +
+				"\n\t}\n\t" + (!DUPLEX_RE.test(code) ? vars.get : code) +
 				"= vvv;\n} "
 			try {
 				fn = Function.apply(noop, names.concat(_body))
@@ -2658,12 +2658,15 @@
 				'\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
 		}) + '"'
 	}
+
+	function getExprText(el) {
+		return el.expr ? "(" + el.value + ")" : quote(el.value)
+	}
+
 	//parseExpr的智能引用代理
 	function parseExprProxy(code, scopes, data, tokens) {
 		if (Array.isArray(tokens)) {
-			code = tokens.map(function(el) {
-				return el.expr ? "(" + el.value + ")" : quote(el.value)
-			}).join(" + ")
+			code = tokens.map(getExprText).join(" + ")
 		}
 		parseExpr(code, scopes, data)
 		if (data.evaluator) {
@@ -2714,7 +2717,7 @@
 			}
 		}
 	}
-	var cacheTmpls = avalon.templateCache = {}
+	var templateCache = avalon.templateCache = {}
 	var ifSanctuary = document.createElement("div")
 	ifSanctuary.innerHTML = "a"
 	try {
@@ -2785,9 +2788,9 @@
 				}
 
 				if (data.param === "src") {
-					if (cacheTmpls[val]) {
+					if (templateCache[val]) {
 						avalon.nextTick(function() {
-							scanTemplate(cacheTmpls[val])
+							scanTemplate(templateCache[val])
 						})
 					} else {
 						var xhr = getXHR()
@@ -2795,7 +2798,7 @@
 							if (LEGACY && xhr.readyState === 4 || !LEGACY) {
 								var s = xhr.status
 								if (s >= 200 && s < 300 || s === 304 || s === 1223) {
-									scanTemplate(cacheTmpls[val] = xhr.responseText)
+									scanTemplate(templateCache[val] = xhr.responseText)
 								}
 							}
 						}
@@ -2897,15 +2900,15 @@
 				if (method === "del" || method === "move") {
 					var locatedNode = getLocatedNode(parent, data, pos)
 				}
+				var i, key, n, last, proxy, spans, lastFn
 				switch (method) {
 					case "add": //在pos位置后添加el数组（pos为数字，el为数组）
-						var arr = el
-						var last = data.getter().length - 1
-						var spans = []
-						var lastFn = {}
-						for (var i = 0, n = arr.length; i < n; i++) {
+						spans = []
+						lastFn = {}
+						last = data.getter().length - 1
+						for (i = 0, n = el.length; i < n; i++) {
 							var ii = i + pos
-							var proxy = getEachProxy(ii, arr[i], data, last)
+							proxy = getEachProxy(ii, el[i], data, last)
 							proxies.splice(ii, 0, proxy)
 							lastFn = shimController(data, transition, spans, proxy)
 						}
@@ -2913,8 +2916,8 @@
 						lastFn.node = locatedNode
 						lastFn.parent = parent
 						parent.insertBefore(transition, locatedNode)
-						for (var i = 0, node; node = spans[i++];) {
-							scanTag(node, data.vmodels)
+						for (i = 0; el = spans[i++];) {
+							scanTag(el, data.vmodels)
 						}
 						spans = null
 						break
@@ -2924,7 +2927,7 @@
 						expelFromSanctuary(removeView(locatedNode, group, el))
 						break
 					case "index": //将proxies中的第pos个起的所有元素重新索引（pos为数字，el用作循环变量）
-						var last = proxies.length - 1
+						last = proxies.length - 1
 						for (; el = proxies[pos]; pos++) {
 							el.$index = pos
 							el.$first = pos === 0
@@ -2934,9 +2937,9 @@
 					case "clear":
 						if (data.startRepeat) {
 							while (true) {
-								var node = data.startRepeat.nextSibling
-								if (node && node !== data.endRepeat) {
-									transition.appendChild(node)
+								el = data.startRepeat.nextSibling
+								if (el && el !== data.endRepeat) {
+									transition.appendChild(el)
 								} else {
 									break
 								}
@@ -2957,18 +2960,17 @@
 						}
 						break
 					case "set": //将proxies中的第pos个元素的VM设置为el（pos为数字，el任意）
-						var proxy = proxies[pos]
+						proxy = proxies[pos]
 						if (proxy) {
 							proxy[proxy.$itemName] = el
 						}
 						break
 					case "append": //将pos的键值对从el中取出（pos为一个普通对象，el为预先生成好的代理VM对象池）
-						var pool = el
 						var callback = getBindingCallback(data.callbackElement, "data-with-sorted", data.vmodels)
 						var keys = []
-						var spans = []
-						var lastFn = {}
-						for (var key in pos) { //得到所有键名
+						spans = []
+						lastFn = {}
+						for (key in pos) { //得到所有键名
 							if (pos.hasOwnProperty(key) && key !== "hasOwnProperty") {
 								keys.push(key)
 							}
@@ -2979,15 +2981,15 @@
 								keys = keys2
 							}
 						}
-						for (var i = 0, key; key = keys[i++];) {
+						for (i = 0; key = keys[i++];) {
 							if (key !== "hasOwnProperty") {
-								lastFn = shimController(data, transition, spans, pool[key])
+								lastFn = shimController(data, transition, spans, el[key])
 							}
 						}
 						lastFn.parent = parent
 						lastFn.node = data.endRepeat || null
 						parent.insertBefore(transition, lastFn.node)
-						for (var i = 0, el; el = spans[i++];) {
+						for (i = 0; el = spans[i++];) {
 							scanTag(el, data.vmodels)
 						}
 						spans = null
@@ -3028,12 +3030,12 @@
 			})
 		},
 		"if": function(val, elem, data) {
-			var placehoder = data.placehoder
+			var placeholder = data.placehoder
 			if (val) { //插回DOM树
 				if (!data.msInDocument) {
 					data.msInDocument = true
-					if (placehoder.parentNode) {
-						placehoder.parentNode.replaceChild(elem, placehoder)
+					if (placeholder.parentNode) {
+						placeholder.parentNode.replaceChild(elem, placeholder)
 					}
 				}
 				if (exprBindRe.test(elem.outerHTML.replace(rlt, "<").replace(rgt, ">"))) {
@@ -3043,9 +3045,9 @@
 				if (data.msInDocument) {
 					data.msInDocument = false
 					if (elem.parentNode) {
-						elem.parentNode.replaceChild(placehoder, elem)
+						elem.parentNode.replaceChild(placeholder, elem)
 					}
-					placehoder.elem = elem
+					placeholder.elem = elem
 					ifSanctuary.appendChild(elem)
 				}
 			}
@@ -3124,6 +3126,10 @@
 	}
 
 	avalon.parseDisplay = parseDisplay
+	function getterFn() {
+		return this.evaluator.apply(0, this.args || [])
+	}
+
 	//这里的函数只会在第一次被扫描后被执行一次，并放进行对应VM属性的subscribers数组内（操作方为registerSubscriber）
 	var bindingHandlers = avalon.bindingHandlers = {
 		//这是一个字符串属性绑定的范本, 方便你在title, alt, src, href, include, css添加插值表达式
@@ -3210,15 +3216,13 @@
 				DEBUG && log.warn("建议使用ms-repeat代替ms-each, ms-with, ms-repeat只占用一个标签并且性能更好")
 			}
 			var elem = data.callbackElement = data.element //用于判定当前元素是否位于DOM树
-			data.getter = function() {
-				return this.evaluator.apply(0, this.args || [])
-			}
+			data.getter = getterFn
 			data.proxies = []
-			var freturn = true
+			var stop = true
 			try {
 				list = data.getter()
 				if (COMPLEX_TYPE_RE.test(avalon.type(list))) {
-					freturn = false
+					stop = false
 				}
 			} catch (ex) {
 			}
@@ -3256,17 +3260,18 @@
 				}
 			}
 			var arr = data.value.split(".") || []
+			var i, v
 			if (arr.length > 1) {
 				arr.pop()
 				var n = arr[0]
-				for (var i = 0, v; v = vmodels[i++];) {
+				for (i = 0; v = vmodels[i++];) {
 					if (v && v.hasOwnProperty(n) && v[n][SUBSCRIBES]) {
 						v[n][SUBSCRIBES].push(data)
 						break
 					}
 				}
 			}
-			if (freturn) {
+			if (stop) {
 				return
 			}
 			data.callbackName = "data-" + type + "-rendered"
@@ -3281,9 +3286,9 @@
 				prop1 = "$key"
 				prop2 = "$val"
 			}
-			for (var i = 0, p; p = vmodels[i++];) {
-				if (p.hasOwnProperty(prop1) && p.hasOwnProperty(prop2)) {
-					data.$outer = p
+			for (i = 0; v = vmodels[i++];) {
+				if (v.hasOwnProperty(prop1) && v.hasOwnProperty(prop2)) {
+					data.$outer = v
 					break
 				}
 			}
@@ -3298,12 +3303,12 @@
 					pool = withProxyPool[list.$id] = {}
 					for (var key in list) {
 						if (list.hasOwnProperty(key) && key !== "hasOwnProperty") {
-							(function(k, v) {
-								pool[k] = createWithProxy(k, v, {})
-								pool[k].$watch("$val", function(val) {
-									list[k] = val //#303
-								})
-							})(key, list[key])
+							pool[key] = createWithProxy(key, list[key], {})
+							pool[key].$watch("$val", (function(key) {
+								return function(val) {
+									list[key] = val
+								} //#303
+							})(key))
 						}
 					}
 				}
@@ -3393,7 +3398,7 @@
 					vmodel.$init()
 				}
 				if (vmodel.hasOwnProperty("$remove")) {
-					function offTree() {
+					var offTree = function() {
 						if (!elem.msRetain && !root.contains(elem)) {
 							vmodel.$remove()
 							elem.msData = {}
@@ -3886,14 +3891,14 @@
 			return this
 		},
 		removeAll: function(all) { //移除N个元素
+			var i;
 			if (Array.isArray(all)) {
-				all.forEach(function(el) {
-					this.remove(el)
-				}, this)
+				for(i = all.length; i > 0;) {
+					this.remove(all[--i])
+				}
 			} else if (typeof all === "function") {
-				for (var i = this.length - 1; i >= 0; i--) {
-					var el = this[i]
-					if (all(el, i)) {
+				for (i = this.length; i > 0;) {
+					if (all(this[--i], i)) {
 						this.splice(i, 1)
 					}
 				}
@@ -4034,7 +4039,7 @@
 			var target = src.cloneNode(true)
 			var srcAll = getAll(src)
 			var destAll = getAll(target)
-			for (var k = 0, src; src = srcAll[k]; k++) {
+			for (var k = 0; src = srcAll[k]; k++) {
 				if (src.nodeType === 1) {
 					var nodeName = src.nodeName
 					var dest = destAll[k]
@@ -4215,313 +4220,319 @@
 		}
 	}
 
-	/*********************************************************************
-	 *                             自带过滤器                            *
-	 **********************************************************************/
-	var filters = avalon.filters = {
-		uppercase: function(str) {
-			return str.toUpperCase()
-		},
-		lowercase: function(str) {
-			return str.toLowerCase()
-		},
-		truncate: function(target, length, truncation) {
-			//length，新字符串长度，truncation，新字符串的结尾的字段,返回新字符串
-			length = length || 30
-			truncation = truncation === undefineds ? "..." : truncation
-			return target.length > length ? target.slice(0, length - truncation.length) + truncation : String(target)
-		},
-		camelize: camelize,
-		//https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet
-		//    <a href="javasc&NewLine;ript&colon;alert('XSS')">chrome</a> 
-		//    <a href="data:text/html;base64, PGltZyBzcmM9eCBvbmVycm9yPWFsZXJ0KDEpPg==">chrome</a>
-		//    <a href="jav	ascript:alert('XSS');">IE67chrome</a>
-		//    <a href="jav&#x09;ascript:alert('XSS');">IE67chrome</a>
-		//    <a href="jav&#x0A;ascript:alert('XSS');">IE67chrome</a>
-		sanitize: !LEGACY && window.toStaticHTML ? toStaticHTML.bind(window) : function(str) {
-			return str.replace(/<script[^>]*>([\S\s]*?)<\/script\s*>/gim, "").replace(/<\w+\b(?:("|')[^\1]*?\1|[^>])*>/ig, function(a) {
-				if (/^<(a|img)\s/i.test(a)) {
-					a = a.replace(/\s+(src|href)(?:=("javascript[^"]*"|'javascript[^']*'))?/ig, " $1=''")//移除javascript伪协议
+	function lowercase(str) {
+		return str.toLowerCase()
+	}
+
+	if (FILTERS) {
+		/*********************************************************************
+		 *                             自带过滤器                            *
+		 **********************************************************************/
+		var filters = avalon.filters = {
+			uppercase: function(str) {
+				return str.toUpperCase()
+			},
+			lowercase: lowercase,
+			truncate: function(target, length, truncation) {
+				//length，新字符串长度，truncation，新字符串的结尾的字段,返回新字符串
+				length = length || 30
+				truncation = truncation === undefined ? "..." : truncation
+				return target.length > length ? target.slice(0, length - truncation.length) + truncation : String(target)
+			},
+			camelize: camelize,
+			//https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet
+			//    <a href="javasc&NewLine;ript&colon;alert('XSS')">chrome</a>
+			//    <a href="data:text/html;base64, PGltZyBzcmM9eCBvbmVycm9yPWFsZXJ0KDEpPg==">chrome</a>
+			//    <a href="jav	ascript:alert('XSS');">IE67chrome</a>
+			//    <a href="jav&#x09;ascript:alert('XSS');">IE67chrome</a>
+			//    <a href="jav&#x0A;ascript:alert('XSS');">IE67chrome</a>
+			sanitize: !LEGACY && window.toStaticHTML ? toStaticHTML.bind(window) : function(str) {
+				return str.replace(/<script[^>]*>([\S\s]*?)<\/script\s*>/gim, "").replace(/<\w+\b(?:("|')[^\1]*?\1|[^>])*>/ig, function(a) {
+					if (/^<(a|img)\s/i.test(a)) {
+						a = a.replace(/\s+(src|href)(?:=("javascript[^"]*"|'javascript[^']*'))?/ig, " $1=''")//移除javascript伪协议
+					}
+					return a.replace(/\s+(on[^=\s]+)(?:=("[^"]*"|'[^']*'|[^\s>]+))?/g, " ").replace(WHITESPACE_RE, " ")//移除onXXX事件
+				})
+			},
+			escape: function(html) {
+				//将字符串经过 html 转义得到适合在页面中显示的内容, 例如替换 < 为 &lt
+				return String(html)
+					.replace(/&/g, '&amp;')
+					.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, surrogate)
+					.replace(/([^\#-~| |!])/g, noalphanumeric)
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;')
+			},
+			currency: function(number, symbol) {
+				symbol = symbol || "\uFFE5"
+				return symbol + filters.number(number)
+			},
+			number: function(number, decimals, dec_point, thousands_sep) {
+				//与PHP的number_format完全兼容
+				//number	必需，要格式化的数字
+				//decimals	可选，规定多少个小数位。
+				//dec_point	可选，规定用作小数点的字符串（默认为 . ）。
+				//thousands_sep	可选，规定用作千位分隔符的字符串（默认为 , ），如果设置了该参数，那么所有其他参数都是必需的。
+				// http://kevin.vanzonneveld.net
+				number = (number + "").replace(/[^0-9+\-Ee.]/g, "")
+				var n = !isFinite(+number) ? 0 : +number,
+					prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
+					sep = thousands_sep || ",",
+					dec = dec_point || ".",
+					s,
+					toFixedFix = function(n, prec) {
+						var k = Math.pow(10, prec)
+						return "" + Math.round(n * k) / k
+					}
+				// Fix for IE parseFloat(0.55).toFixed(0) = 0
+				s = (prec ? toFixedFix(n, prec) : "" + Math.round(n)).split('.')
+				if (s[0].length > 3) {
+					s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep)
 				}
-				return a.replace(/\s+(on[^=\s]+)(?:=("[^"]*"|'[^']*'|[^\s>]+))?/g, " ").replace(WHITESPACE_RE, " ")//移除onXXX事件
+				if ((s[1] || "").length < prec) {
+					s[1] = s[1] || ""
+					s[1] += new Array(prec - s[1].length + 1).join("0")
+				}
+				return s.join(dec)
+			}
+		}
+
+		function surrogate(value) {
+			var hi = value.charCodeAt(0)
+			var low = value.charCodeAt(1)
+			return '&#' + (((hi - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000) + ';'
+		}
+
+		function noalphanumeric(value) {
+			return '&#' + value.charCodeAt(0) + ';'
+		}
+
+		/*
+		 'yyyy': 4 digit representation of year (e.g. AD 1 => 0001, AD 2010 => 2010)
+		 'yy': 2 digit representation of year, padded (00-99). (e.g. AD 2001 => 01, AD 2010 => 10)
+		 'y': 1 digit representation of year, e.g. (AD 1 => 1, AD 199 => 199)
+		 'MMMM': Month in year (January-December)
+		 'MMM': Month in year (Jan-Dec)
+		 'MM': Month in year, padded (01-12)
+		 'M': Month in year (1-12)
+		 'dd': Day in month, padded (01-31)
+		 'd': Day in month (1-31)
+		 'EEEE': Day in Week,(Sunday-Saturday)
+		 'EEE': Day in Week, (Sun-Sat)
+		 'HH': Hour in day, padded (00-23)
+		 'H': Hour in day (0-23)
+		 'hh': Hour in am/pm, padded (01-12)
+		 'h': Hour in am/pm, (1-12)
+		 'mm': Minute in hour, padded (00-59)
+		 'm': Minute in hour (0-59)
+		 'ss': Second in minute, padded (00-59)
+		 's': Second in minute (0-59)
+		 'a': am/pm marker
+		 'Z': 4 digit (+sign) representation of the timezone offset (-1200-+1200)
+		 format string can also be one of the following predefined localizable formats:
+
+		 'medium': equivalent to 'MMM d, y h:mm:ss a' for en_US locale (e.g. Sep 3, 2010 12:05:08 pm)
+		 'short': equivalent to 'M/d/yy h:mm a' for en_US locale (e.g. 9/3/10 12:05 pm)
+		 'fullDate': equivalent to 'EEEE, MMMM d,y' for en_US locale (e.g. Friday, September 3, 2010)
+		 'longDate': equivalent to 'MMMM d, y' for en_US locale (e.g. September 3, 2010
+		 'mediumDate': equivalent to 'MMM d, y' for en_US locale (e.g. Sep 3, 2010)
+		 'shortDate': equivalent to 'M/d/yy' for en_US locale (e.g. 9/3/10)
+		 'mediumTime': equivalent to 'h:mm:ss a' for en_US locale (e.g. 12:05:08 pm)
+		 'shortTime': equivalent to 'h:mm a' for en_US locale (e.g. 12:05 pm)
+		 */
+		function toInt(str) {
+			return parseInt(str, 10)
+		}
+
+		function padNumber(num, digits, trim) {
+			var neg = ""
+			if (num < 0) {
+				neg = '-'
+				num = -num
+			}
+			num = "" + num
+			while (num.length < digits)
+				num = "0" + num
+			if (trim)
+				num = num.substr(num.length - digits)
+			return neg + num
+		}
+
+		function dateGetter(name, size, offset, trim) {
+			return function(date) {
+				var value = date["get" + name]()
+				if (offset > 0 || value > -offset)
+					value += offset
+				if (value === 0 && offset === -12) {
+					value = 12
+				}
+				return padNumber(value, size, trim)
+			}
+		}
+
+		function dateStrGetter(name, shortForm) {
+			return function(date, formats) {
+				var value = date["get" + name]()
+				var get = (shortForm ? ("SHORT" + name) : name).toUpperCase()
+				return formats[get][value]
+			}
+		}
+
+		function timeZoneGetter(date) {
+			var zone = -1 * date.getTimezoneOffset()
+			var paddedZone = (zone >= 0) ? "+" : ""
+			paddedZone += padNumber(Math[zone > 0 ? "floor" : "ceil"](zone / 60), 2) + padNumber(Math.abs(zone % 60), 2)
+			return paddedZone
+		}
+
+		//取得上午下午
+
+		function ampmGetter(date, formats) {
+			return date.getHours() < 12 ? formats.AMPMS[0] : formats.AMPMS[1]
+		}
+
+		var DATE_FORMATS = {
+			yyyy: dateGetter("FullYear", 4),
+			yy: dateGetter("FullYear", 2, 0, true),
+			y: dateGetter("FullYear", 1),
+			MMMM: dateStrGetter("Month"),
+			MMM: dateStrGetter("Month", true),
+			MM: dateGetter("Month", 2, 1),
+			M: dateGetter("Month", 1, 1),
+			dd: dateGetter("Date", 2),
+			d: dateGetter("Date", 1),
+			HH: dateGetter("Hours", 2),
+			H: dateGetter("Hours", 1),
+			hh: dateGetter("Hours", 2, -12),
+			h: dateGetter("Hours", 1, -12),
+			mm: dateGetter("Minutes", 2),
+			m: dateGetter("Minutes", 1),
+			ss: dateGetter("Seconds", 2),
+			s: dateGetter("Seconds", 1),
+			sss: dateGetter("Milliseconds", 3),
+			EEEE: dateStrGetter("Day"),
+			EEE: dateStrGetter("Day", true),
+			a: ampmGetter,
+			Z: timeZoneGetter
+		}
+
+		function jsonStringToDate(string) {
+			var match
+			if (match = string.match(/^(\d{4})-?(\d\d)-?(\d\d)(?:T(\d\d)(?::?(\d\d)(?::?(\d\d)(?:\.(\d+))?)?)?(Z|([+-])(\d\d):?(\d\d))?)?$/)) {
+				var date = new Date(0),
+					tzHour = 0,
+					tzMin = 0,
+					dateSetter = match[8] ? date.setUTCFullYear : date.setFullYear,
+					timeSetter = match[8] ? date.setUTCHours : date.setHours
+				if (match[9]) {
+					tzHour = toInt(match[9] + match[10])
+					tzMin = toInt(match[9] + match[11])
+				}
+				dateSetter.call(date, toInt(match[1]), toInt(match[2]) - 1, toInt(match[3]))
+				var h = toInt(match[4] || 0) - tzHour
+				var m = toInt(match[5] || 0) - tzMin
+				var s = toInt(match[6] || 0)
+				var ms = Math.round(parseFloat('0.' + (match[7] || 0)) * 1000)
+				timeSetter.call(date, h, m, s, ms)
+				return date
+			}
+			return string
+		}
+
+		filters.date = function(date, format) {
+			var locale = filters.date.locale,
+				text = "",
+				parts = [],
+				fn, match
+			format = format || "mediumDate"
+			format = locale[format] || format
+			if (typeof date === "string") {
+				if (/^\d+$/.test(date)) {
+					date = toInt(date)
+				} else {
+					var trimDate = date.trim()
+					if (trimDate.match(/^(\d+)-(\d+)-(\d{4})$/) || trimDate.match(/^(\d+)\s+(\d+),(\d{4})$/)) {
+						date = RegExp.$3 + "/" + RegExp.$1 + "/" + RegExp.$2
+					}
+					date = jsonStringToDate(date)
+				}
+				date = new Date(date)
+			}
+			if (typeof date === "number") {
+				date = new Date(date)
+			}
+			if (avalon.type(date) !== "date") {
+				return
+			}
+			var dateFormatSplit = /((?:[^yMdHhmsaZE']+)|(?:'(?:[^']|'')*')|(?:E+|y+|M+|d+|H+|h+|m+|s+|a|Z))(.*)/
+			while (format) {
+				match = dateFormatSplit.exec(format)
+				if (match) {
+					parts = parts.concat(match.slice(1))
+					format = parts.pop()
+				} else {
+					parts.push(format)
+					format = null
+				}
+			}
+			parts.forEach(function(value) {
+				fn = DATE_FORMATS[value]
+				text += fn ? fn(date, locale) : value.replace(/(^'|'$)/g, "").replace(/''/g, "'")
 			})
-		},
-		escape: function(html) {
-			//将字符串经过 html 转义得到适合在页面中显示的内容, 例如替换 < 为 &lt 
-			return String(html)
-				.replace(/&/g, '&amp;')
-				.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, surrogate)
-				.replace(/([^\#-~| |!])/g, noalphanumeric)
-				.replace(/</g, '&lt;')
-				.replace(/>/g, '&gt;')
-		},
-		currency: function(number, symbol) {
-			symbol = symbol || "\uFFE5"
-			return symbol + filters.number(number)
-		},
-		number: function(number, decimals, dec_point, thousands_sep) {
-			//与PHP的number_format完全兼容
-			//number	必需，要格式化的数字
-			//decimals	可选，规定多少个小数位。
-			//dec_point	可选，规定用作小数点的字符串（默认为 . ）。
-			//thousands_sep	可选，规定用作千位分隔符的字符串（默认为 , ），如果设置了该参数，那么所有其他参数都是必需的。
-			// http://kevin.vanzonneveld.net
-			number = (number + "").replace(/[^0-9+\-Ee.]/g, "")
-			var n = !isFinite(+number) ? 0 : +number,
-				prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
-				sep = thousands_sep || ",",
-				dec = dec_point || ".",
-				s,
-				toFixedFix = function(n, prec) {
-					var k = Math.pow(10, prec)
-					return "" + Math.round(n * k) / k
-				}
-			// Fix for IE parseFloat(0.55).toFixed(0) = 0 
-			s = (prec ? toFixedFix(n, prec) : "" + Math.round(n)).split('.')
-			if (s[0].length > 3) {
-				s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep)
-			}
-			if ((s[1] || "").length < prec) {
-				s[1] = s[1] || ""
-				s[1] += new Array(prec - s[1].length + 1).join("0")
-			}
-			return s.join(dec)
+			return text
 		}
-	}
-
-	function surrogate(value) {
-		var hi = value.charCodeAt(0)
-		var low = value.charCodeAt(1)
-		return '&#' + (((hi - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000) + ';'
-	}
-
-	function noalphanumeric(value) {
-		return '&#' + value.charCodeAt(0) + ';'
-	}
-
-	/*
-	 'yyyy': 4 digit representation of year (e.g. AD 1 => 0001, AD 2010 => 2010)
-	 'yy': 2 digit representation of year, padded (00-99). (e.g. AD 2001 => 01, AD 2010 => 10)
-	 'y': 1 digit representation of year, e.g. (AD 1 => 1, AD 199 => 199)
-	 'MMMM': Month in year (January-December)
-	 'MMM': Month in year (Jan-Dec)
-	 'MM': Month in year, padded (01-12)
-	 'M': Month in year (1-12)
-	 'dd': Day in month, padded (01-31)
-	 'd': Day in month (1-31)
-	 'EEEE': Day in Week,(Sunday-Saturday)
-	 'EEE': Day in Week, (Sun-Sat)
-	 'HH': Hour in day, padded (00-23)
-	 'H': Hour in day (0-23)
-	 'hh': Hour in am/pm, padded (01-12)
-	 'h': Hour in am/pm, (1-12)
-	 'mm': Minute in hour, padded (00-59)
-	 'm': Minute in hour (0-59)
-	 'ss': Second in minute, padded (00-59)
-	 's': Second in minute (0-59)
-	 'a': am/pm marker
-	 'Z': 4 digit (+sign) representation of the timezone offset (-1200-+1200)
-	 format string can also be one of the following predefined localizable formats:
-
-	 'medium': equivalent to 'MMM d, y h:mm:ss a' for en_US locale (e.g. Sep 3, 2010 12:05:08 pm)
-	 'short': equivalent to 'M/d/yy h:mm a' for en_US locale (e.g. 9/3/10 12:05 pm)
-	 'fullDate': equivalent to 'EEEE, MMMM d,y' for en_US locale (e.g. Friday, September 3, 2010)
-	 'longDate': equivalent to 'MMMM d, y' for en_US locale (e.g. September 3, 2010
-	 'mediumDate': equivalent to 'MMM d, y' for en_US locale (e.g. Sep 3, 2010)
-	 'shortDate': equivalent to 'M/d/yy' for en_US locale (e.g. 9/3/10)
-	 'mediumTime': equivalent to 'h:mm:ss a' for en_US locale (e.g. 12:05:08 pm)
-	 'shortTime': equivalent to 'h:mm a' for en_US locale (e.g. 12:05 pm)
-	 */
-	function toInt(str) {
-		return parseInt(str, 10)
-	}
-
-	function padNumber(num, digits, trim) {
-		var neg = ""
-		if (num < 0) {
-			neg = '-'
-			num = -num
+		var locale = {
+			AMPMS: {
+				0: "上午",
+				1: "下午"
+			},
+			DAY: {
+				0: "星期日",
+				1: "星期一",
+				2: "星期二",
+				3: "星期三",
+				4: "星期四",
+				5: "星期五",
+				6: "星期六"
+			},
+			MONTH: {
+				0: "1月",
+				1: "2月",
+				2: "3月",
+				3: "4月",
+				4: "5月",
+				5: "6月",
+				6: "7月",
+				7: "8月",
+				8: "9月",
+				9: "10月",
+				10: "11月",
+				11: "12月"
+			},
+			SHORTDAY: {
+				"0": "周日",
+				"1": "周一",
+				"2": "周二",
+				"3": "周三",
+				"4": "周四",
+				"5": "周五",
+				"6": "周六"
+			},
+			fullDate: "y年M月d日EEEE",
+			longDate: "y年M月d日",
+			medium: "yyyy-M-d ah:mm:ss",
+			mediumDate: "yyyy-M-d",
+			mediumTime: "ah:mm:ss",
+			"short": "yy-M-d ah:mm",
+			shortDate: "yy-M-d",
+			shortTime: "ah:mm"
 		}
-		num = "" + num
-		while (num.length < digits)
-			num = "0" + num
-		if (trim)
-			num = num.substr(num.length - digits)
-		return neg + num
+		locale.SHORTMONTH = locale.MONTH
+		filters.date.locale = locale
 	}
-
-	function dateGetter(name, size, offset, trim) {
-		return function(date) {
-			var value = date["get" + name]()
-			if (offset > 0 || value > -offset)
-				value += offset
-			if (value === 0 && offset === -12) {
-				value = 12
-			}
-			return padNumber(value, size, trim)
-		}
+	else {
+		avalon.filters = {}
 	}
-
-	function dateStrGetter(name, shortForm) {
-		return function(date, formats) {
-			var value = date["get" + name]()
-			var get = (shortForm ? ("SHORT" + name) : name).toUpperCase()
-			return formats[get][value]
-		}
-	}
-
-	function timeZoneGetter(date) {
-		var zone = -1 * date.getTimezoneOffset()
-		var paddedZone = (zone >= 0) ? "+" : ""
-		paddedZone += padNumber(Math[zone > 0 ? "floor" : "ceil"](zone / 60), 2) + padNumber(Math.abs(zone % 60), 2)
-		return paddedZone
-	}
-
-	//取得上午下午
-
-	function ampmGetter(date, formats) {
-		return date.getHours() < 12 ? formats.AMPMS[0] : formats.AMPMS[1]
-	}
-
-	var DATE_FORMATS = {
-		yyyy: dateGetter("FullYear", 4),
-		yy: dateGetter("FullYear", 2, 0, true),
-		y: dateGetter("FullYear", 1),
-		MMMM: dateStrGetter("Month"),
-		MMM: dateStrGetter("Month", true),
-		MM: dateGetter("Month", 2, 1),
-		M: dateGetter("Month", 1, 1),
-		dd: dateGetter("Date", 2),
-		d: dateGetter("Date", 1),
-		HH: dateGetter("Hours", 2),
-		H: dateGetter("Hours", 1),
-		hh: dateGetter("Hours", 2, -12),
-		h: dateGetter("Hours", 1, -12),
-		mm: dateGetter("Minutes", 2),
-		m: dateGetter("Minutes", 1),
-		ss: dateGetter("Seconds", 2),
-		s: dateGetter("Seconds", 1),
-		sss: dateGetter("Milliseconds", 3),
-		EEEE: dateStrGetter("Day"),
-		EEE: dateStrGetter("Day", true),
-		a: ampmGetter,
-		Z: timeZoneGetter
-	}
-
-	function jsonStringToDate(string) {
-		var match
-		if (match = string.match(/^(\d{4})-?(\d\d)-?(\d\d)(?:T(\d\d)(?::?(\d\d)(?::?(\d\d)(?:\.(\d+))?)?)?(Z|([+-])(\d\d):?(\d\d))?)?$/)) {
-			var date = new Date(0),
-				tzHour = 0,
-				tzMin = 0,
-				dateSetter = match[8] ? date.setUTCFullYear : date.setFullYear,
-				timeSetter = match[8] ? date.setUTCHours : date.setHours
-			if (match[9]) {
-				tzHour = toInt(match[9] + match[10])
-				tzMin = toInt(match[9] + match[11])
-			}
-			dateSetter.call(date, toInt(match[1]), toInt(match[2]) - 1, toInt(match[3]))
-			var h = toInt(match[4] || 0) - tzHour
-			var m = toInt(match[5] || 0) - tzMin
-			var s = toInt(match[6] || 0)
-			var ms = Math.round(parseFloat('0.' + (match[7] || 0)) * 1000)
-			timeSetter.call(date, h, m, s, ms)
-			return date
-		}
-		return string
-	}
-
-	filters.date = function(date, format) {
-		var locale = filters.date.locale,
-			text = "",
-			parts = [],
-			fn, match
-		format = format || "mediumDate"
-		format = locale[format] || format
-		if (typeof date === "string") {
-			if (/^\d+$/.test(date)) {
-				date = toInt(date)
-			} else {
-				var trimDate = date.trim()
-				if (trimDate.match(/^(\d+)-(\d+)-(\d{4})$/) || trimDate.match(/^(\d+)\s+(\d+),(\d{4})$/)) {
-					date = RegExp.$3 + "/" + RegExp.$1 + "/" + RegExp.$2
-				}
-				date = jsonStringToDate(date)
-			}
-			date = new Date(date)
-		}
-		if (typeof date === "number") {
-			date = new Date(date)
-		}
-		if (avalon.type(date) !== "date") {
-			return
-		}
-		var dateFormatSplit = /((?:[^yMdHhmsaZE']+)|(?:'(?:[^']|'')*')|(?:E+|y+|M+|d+|H+|h+|m+|s+|a|Z))(.*)/
-		while (format) {
-			match = dateFormatSplit.exec(format)
-			if (match) {
-				parts = parts.concat(match.slice(1))
-				format = parts.pop()
-			} else {
-				parts.push(format)
-				format = null
-			}
-		}
-		parts.forEach(function(value) {
-			fn = DATE_FORMATS[value]
-			text += fn ? fn(date, locale) : value.replace(/(^'|'$)/g, "").replace(/''/g, "'")
-		})
-		return text
-	}
-	var locale = {
-		AMPMS: {
-			0: "上午",
-			1: "下午"
-		},
-		DAY: {
-			0: "星期日",
-			1: "星期一",
-			2: "星期二",
-			3: "星期三",
-			4: "星期四",
-			5: "星期五",
-			6: "星期六"
-		},
-		MONTH: {
-			0: "1月",
-			1: "2月",
-			2: "3月",
-			3: "4月",
-			4: "5月",
-			5: "6月",
-			6: "7月",
-			7: "8月",
-			8: "9月",
-			9: "10月",
-			10: "11月",
-			11: "12月"
-		},
-		SHORTDAY: {
-			"0": "周日",
-			"1": "周一",
-			"2": "周二",
-			"3": "周三",
-			"4": "周四",
-			"5": "周五",
-			"6": "周六"
-		},
-		fullDate: "y年M月d日EEEE",
-		longDate: "y年M月d日",
-		medium: "yyyy-M-d ah:mm:ss",
-		mediumDate: "yyyy-M-d",
-		mediumTime: "ah:mm:ss",
-		"short": "yy-M-d ah:mm",
-		shortDate: "yy-M-d",
-		shortTime: "ah:mm"
-	}
-	locale.SHORTMONTH = locale.MONTH
-	filters.date.locale = locale
-
 	/*********************************************************************
 	 *                      AMD加载器                                   *
 	 **********************************************************************/
@@ -4617,7 +4628,7 @@
 				if (LEGACY && xhr.readyState === 4 || !LEGACY) {
 					var status = xhr.status;
 					if (status > 399 && status < 600) {
-						throw Error(url + " 对应资源不存在或没有开启 CORS")
+						throw new Error(url + " 对应资源不存在或没有开启 CORS")
 					} else {
 						modules[id].state = 2
 						modules[id].exports = xhr.responseText
@@ -4652,8 +4663,8 @@
 				}
 
 				function onerror(a, b) {
-					if(!b) {
-						throw Error(url + "对应资源不存在或没有开启 CORS")
+					if (!b) {
+						throw new Error(url + "对应资源不存在或没有开启 CORS")
 					}
 					setTimeout(function() {
 						head.removeChild(link)
@@ -4682,7 +4693,7 @@
 				var obj = modules[id],
 					deps = obj.deps
 				for (var key in deps) {
-					if (ohasOwn.call(deps, key) && modules[key].state !== 2) {
+					if (oHasOwn.call(deps, key) && modules[key].state !== 2) {
 						continue loop
 					}
 				}
@@ -4749,7 +4760,7 @@
 				} else if (tmp === "/") {
 					ret = url //相对于根路径
 				} else {
-					throw Error("不符合模块标识规则: " + url)
+					throw new Error("不符合模块标识规则: " + url)
 				}
 			}
 			//5. 补全扩展名
@@ -4868,7 +4879,7 @@
 				} catch (ex) {
 				}
 				if (isCycle) {
-					throw Error(d + "模块与之前的模块存在循环依赖，请不要直接用script标签引入" + d + "模块")
+					throw new Error(d + "模块与之前的模块存在循环依赖，请不要直接用script标签引入" + d + "模块")
 				}
 				delete factory.delay //释放内存
 				require.apply(null, args) //0,1,2 --> 1,2,0
