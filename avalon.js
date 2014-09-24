@@ -106,8 +106,9 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 	}
 	if (LEGACY) {
 		function isWindow(obj) {
-			if (!obj)
+			if (!obj) {
 				return false
+			}
 			// 利用IE678 window == document为true,document == window竟然为false的神奇特性
 			// 标准浏览器及IE9，IE10等使用 正则检测
 			return obj == obj.document && obj.document != obj
@@ -181,12 +182,14 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 							copyIsArray = false
 							clone = src && Array.isArray(src) ? src : []
 
-						} else {
+						}
+						else {
 							clone = src && avalon.isPlainObject(src) ? src : {}
 						}
 
 						target[name] = avalon.mix(deep, clone, copy)
-					} else if (copy !== undefined) {
+					}
+					else if (copy !== undefined) {
 						target[name] = copy
 					}
 				}
@@ -212,8 +215,9 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		} : function(nodes, start, end) {
 			var ret = []
 			var len = nodes.length
-			if (end === undefined)
+			if (end === undefined) {
 				end = len
+			}
 			if (typeof end === "number" && isFinite(end)) {
 				start = _number(start, len)
 				end = _number(end, len)
@@ -275,11 +279,13 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				}
 				if (isW3C) {
 					el.addEventListener(type, callback, !!phase)
-				} else {
+				}
+				else {
 					el.attachEvent("on" + type, callback)
 				}
 				return callback
-			} else {
+			}
+			else {
 				el.addEventListener(type, fn, !!phase)
 				return fn
 			}
@@ -295,10 +301,12 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			if (LEGACY) {
 				if (isW3C) {
 					el.removeEventListener(type, callback, !!phase)
-				} else {
+				}
+				else {
 					el.detachEvent("on" + type, callback)
 				}
-			} else {
+			}
+			else {
 				el.removeEventListener(type, fn || noop, !!phase)
 			}
 		},
@@ -313,9 +321,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				var fn = cssHooks[prop + ":get"] || cssHooks["@:get"]
 				var val = fn(node, name)
 				return value === true ? parseFloat(val) || 0 : val
-			} else if (value === "") { //请除样式
+			}
+			else if (value === "") { //请除样式
 				node.style[name] = ""
-			} else { //设置样式
+			}
+			else { //设置样式
 				if (value === null || value !== value) {
 					return
 				}
@@ -334,7 +344,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					for (var n = obj.length; i < n; i++) {
 						fn(i, obj[i])
 					}
-				} else {
+				}
+				else {
 					for (i in obj) {
 						if (obj.hasOwnProperty(i)) {
 							fn(i, obj[i])
@@ -369,8 +380,9 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			/*移除数组中第一个匹配传参的那个元素，返回布尔表示成功与否*/
 			remove: function(target, item) {
 				var index = target.indexOf(item)
-				if (~index)
+				if (~index) {
 					return avalon.Array.removeAt(target, index)
+				}
 				return false
 			}
 		}
@@ -397,7 +409,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					} catch (ex) { //IE的NodeList直接抛错
 						return true
 					}
-				} else {
+				}
+				else {
 					return true
 				}
 			}
@@ -431,7 +444,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		}
 		if (typeof id === "object") {
 			var model = modelFactory(id)
-		} else {
+		}
+		else {
 			var scope = {
 				$watch: ES6 ? EventManager.$watch : noop
 			}
@@ -482,7 +496,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 						get: val.get, // 将计算属性转为真正的访问器属性
 						set: val.set || noop
 					})
-				} else if (COMPLEX_TYPE_RE.test(valueType)) {
+				}
+				else if (COMPLEX_TYPE_RE.test(valueType)) {
 					vmodel[key] = modelFactory(val)
 				}
 			})
@@ -559,7 +574,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		}
 		if (ES6) {
 			Object.observe(vmodel, observeCallback)
-		} else {
+		}
+		else {
 			for (i = 0; fn = computedProperties[i++];) { //最后强逼计算属性 计算自己的值
 				currentComputeFn = fn
 				fn()
@@ -576,9 +592,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 	var isEqual = Object.is || function(v1, v2) {
 		if (v1 === 0 && v2 === 0) {
 			return 1 / v1 === 1 / v2
-		} else if (v1 !== v1) {
+		}
+		else if (v1 !== v1) {
 			return v2 !== v2
-		} else {
+		}
+		else {
 			return v1 === v2
 		}
 	}
@@ -597,7 +615,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		for (var i = 1, el; el = array[i++];) {
 			if (!obj.hasOwnProperty(el)) {
 				return (obj && typeof obj === "object") ? 1 : 0
-			} else {
+			}
+			else {
 				obj = obj[el]
 			}
 		}
@@ -618,10 +637,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					var type = avalon.type(oldValue)
 					if (COMPLEX_TYPE_RE.test(type)) {
 						newValue = updateVModel(oldValue, newValue, type)
-						var fn = rebindings[newValue.$id]
+						var fn = reBindings[newValue.$id]
 						fn && fn()
 						host.$model[name] = newValue.$model //同步$model
-					} else {
+					}
+					else {
 						withProxyCount && updateWithProxy(host.$id, name, newValue) //同步循环绑定中的代理VM
 					}
 					host.$fire(name, newValue, oldValue)
@@ -707,7 +727,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 							notifySubscribers(accessor) //通知顶层改变
 							safeFire(vmodel, name, newValue, preValue) //触发$watch回调
 						}
-					} else {
+					}
+					else {
 						if (avalon.openComputedCollect) { // 收集视图刷新函数
 							collectSubscribers(accessor)
 						}
@@ -732,14 +753,15 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 						}
 						if (!isEqual(preValue, newValue)) {
 							newValue = accessor.$vmodel = updateVModel(realAccessor, newValue, valueType)
-							var fn = rebindings[newValue.$id]
+							var fn = reBindings[newValue.$id]
 							fn && fn() //更新视图
 							var parent = watchProperties.vmodel
 							model[name] = newValue.$model //同步$model
 							notifySubscribers(realAccessor) //通知顶层改变
 							safeFire(parent, name, model[name], preValue) //触发$watch回调
 						}
-					} else {
+					}
+					else {
 						collectSubscribers(realAccessor) //收集视图函数
 						return realAccessor
 					}
@@ -759,7 +781,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 							notifySubscribers(accessor) //通知顶层改变
 							safeFire(vmodel, name, newValue, preValue) //触发$watch回调
 						}
-					} else {
+					}
+					else {
 						collectSubscribers(accessor) //收集视图函数
 						return preValue
 					}
@@ -773,7 +796,7 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 	//ms-with, ms-repeat绑定生成的代理对象储存池
 	var withProxyPool = {}
 	var withProxyCount = 0
-	var rebindings = {}
+	var reBindings = {}
 
 	function updateWithProxy($id, name, val) {
 		var pool = withProxyPool[$id]
@@ -793,20 +816,21 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			a.clear()
 			ES6 ? a.pushArray(bb) : a.push.apply(a, bb)
 			return a
-		} else {
+		}
+		else {
 			var iterators = a[SUBSCRIBES] || []
 			if (withProxyPool[a.$id]) {
 				withProxyCount--
 				delete withProxyPool[a.$id]
 			}
 			var ret = modelFactory(b)
-			rebindings[ret.$id] = function(data) {
+			reBindings[ret.$id] = function(data) {
 				while (data = iterators.shift()) {
 					if (data.type) {
 						rollbackFn(data)
 					}
 				}
-				delete rebindings[ret.$id]
+				delete reBindings[ret.$id]
 			}
 			return ret
 		}
@@ -885,7 +909,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				if (typeof accessor === "function") {
 					if (arguments.length === 3) {
 						accessor(value)
-					} else {
+					}
+					else {
 						return accessor()
 					}
 				}
@@ -971,7 +996,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					for (var i = 0; i < object.length; ++i) {
 						theKeys.push(String(i))
 					}
-				} else {
+				}
+				else {
 					for (var name in object) {
 						if (!(skipProto && name === "prototype") && oHasOwn.call(object, name)) {
 							theKeys.push(String(name))
@@ -1000,8 +1026,9 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 
 		if (!noop.bind) {
 			Function.prototype.bind = function(scope) {
-				if (arguments.length < 2 && scope === undefined)
+				if (arguments.length < 2 && scope === undefined) {
 					return this
+				}
 				var fn = this,
 					argv = arguments
 				return function() {
@@ -1027,22 +1054,26 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				indexOf: function(item, index) {
 					var n = this.length,
 						i = ~~index
-					if (i < 0)
+					if (i < 0) {
 						i += n
+					}
 					for (; i < n; i++)
-						if (this[i] === item)
+						if (this[i] === item) {
 							return i
+						}
 					return -1
 				},
 				//定位操作，同上，不过是从后遍历。
 				lastIndexOf: function(item, index) {
 					var n = this.length,
 						i = index == null ? n - 1 : index
-					if (i < 0)
+					if (i < 0) {
 						i = Math.max(0, n + i)
+					}
 					for (; i >= 0; i--)
-						if (this[i] === item)
+						if (this[i] === item) {
 							return i
+						}
 					return -1
 				},
 				//迭代操作，将数组的元素挨个儿传入一个函数中执行。Prototype.js的对应名字为each。
@@ -1131,7 +1162,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 						if (tagName === "svg") {
 							parent.insertBefore(frag, this)
 							// svg节点的子节点类似
-						} else {
+						}
+						else {
 							var newFrag = document.createDocumentFragment()
 							enumerateNode(frag, newFrag)
 							parent.insertBefore(newFrag, this)
@@ -1160,14 +1192,17 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 	 **********************************************************************/
 	var config = avalon.config = function(settings) {
 		for (var p in settings) {
-			if (!oHasOwn.call(settings, p))
+			if (!oHasOwn.call(settings, p)) {
 				continue
+			}
 			var val = settings[p]
 			if (typeof config.plugins[p] === "function") {
 				config.plugins[p](val)
-			} else if (typeof config[p] === "object") {
+			}
+			else if (typeof config[p] === "object") {
 				avalon.mix(config[p], val)
-			} else {
+			}
+			else {
 				config[p] = val
 			}
 		}
@@ -1187,9 +1222,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		closeTag = array[1]
 		if (openTag === closeTag) {
 			throw new SyntaxError("openTag不能和closeTag相同")
-		} else if (array + "" === "<!--,-->") {
+		}
+		else if (array + "" === "<!--,-->") {
 			config.commentInterpolate = true
-		} else {
+		}
+		else {
 			var test = openTag + "test" + closeTag
 			cinerator.innerHTML = test
 			if (cinerator.innerHTML !== test && cinerator.innerHTML.indexOf("&lt;") >= 0) {
@@ -1256,7 +1293,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				var node = this.node
 				if (typeof node.className === "string") {
 					node.className = cls
-				} else {//SVG元素的className是一个对象 SVGAnimatedString { baseVal="", animVal=""}，只能通过set/getAttribute操作
+				}
+				else {//SVG元素的className是一个对象 SVGAnimatedString { baseVal="", animVal=""}，只能通过set/getAttribute操作
 					node.setAttribute("class", cls)
 				}
 			}//toggle存在版本差异，因此不使用它
@@ -1307,7 +1345,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			if (arguments.length === 2) {
 				this[0].setAttribute(name, value)
 				return this
-			} else {
+			}
+			else {
 				return this[0].getAttribute(name)
 			}
 		},
@@ -1321,7 +1360,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				for (var i in name) {
 					avalon.css(this, i, name[i])
 				}
-			} else {
+			}
+			else {
 				var ret = avalon.css(this, name, value)
 			}
 			return ret !== undefined ? ret : this
@@ -1338,7 +1378,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			}
 			if (this.css("position") === "fixed") {
 				offset = elem.getBoundingClientRect()
-			} else {
+			}
+			else {
 				offsetParent = this.offsetParent() //得到真正的offsetParent
 				offset = this.offset() // 得到正确的offsetParent
 				if (offsetParent[0].tagName !== "HTML") {
@@ -1378,9 +1419,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				var fn = valHooks[getValType(node) + access]
 				if (fn) {
 					var val = fn(node, value)
-				} else if (get) {
+				}
+				else if (get) {
 					return (node.value || "").replace(/\r/g, "")
-				} else {
+				}
+				else {
 					node.value = value
 				}
 			}
@@ -1458,7 +1501,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				throw new Error("Invalid JSON: " + data)
 			}
 		}
-	} else {
+	}
+	else {
 		avalon.parseJSON = JSON.parse;
 	}
 
@@ -1472,10 +1516,12 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				top = method === "scrollTop"
 			if (!arguments.length) {
 				return win ? (prop in win) ? win[prop] : root[method] : node[method]
-			} else {
+			}
+			else {
 				if (win) {
 					win.scrollTo(!top ? val : avalon(win).scrollLeft(), top ? val : avalon(win).scrollTop())
-				} else {
+				}
+				else {
 					node[method] = val
 				}
 			}
@@ -1532,7 +1578,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			var ret = cssHooks["@:get"](node, "opacity")
 			return ret === "" ? "1" : ret
 		}
-	} else {
+	}
+	else {
 		var rnumnonpx = /^-?(?:\d*\.)?\d+(?!px)[^\d\s]+$/i
 		var rposition = /^(top|right|bottom|left)$/
 		var ie8 = !!window.XDomainRequest
@@ -1677,7 +1724,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					return Math.max(node.body[scrollProp], doc[scrollProp], node.body[offsetProp], doc[offsetProp], doc[clientProp])
 				}
 				return cssHooks[method + "&get"](node)
-			} else {
+			}
+			else {
 				return this.css(method, value)
 			}
 		}
@@ -1876,10 +1924,12 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				var callbacks = this.$events[type]
 				if (callbacks) {
 					callbacks.push(callback)
-				} else {
+				}
+				else {
 					this.$events[type] = [callback]
 				}
-			} else { //重新开始监听此VM的第一重简单属性的变动
+			}
+			else { //重新开始监听此VM的第一重简单属性的变动
 				this.$events = this.$watch.backup
 			}
 			return this
@@ -1889,9 +1939,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			if (n === 0) { //让此VM的所有$watch回调无效化
 				this.$watch.backup = this.$events
 				this.$events = {}
-			} else if (n === 1) {
+			}
+			else if (n === 1) {
 				this.$events[type] = []
-			} else {
+			}
+			else {
 				var callbacks = this.$events[type] || []
 				var i = callbacks.length
 				while (~--i < 0) {
@@ -1989,13 +2041,15 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				if (data.nodeType === 3) {
 					if (config.commentInterpolate) {
 						data.element.replaceChild(document.createComment(data.value), data.node)
-					} else {
+					}
+					else {
 						data.node.data = openTag + data.value + closeTag
 					}
 				}
 				DEBUG && log.warn("evaluate of [" + data.value + "] catched error", data, ex)
 			}
-		} else { //如果是计算属性的accessor
+		}
+		else { //如果是计算属性的accessor
 			data()
 		}
 		avalon.openComputedCollect = false
@@ -2034,7 +2088,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 							remove = true
 						}
 					}
-				} else if (fn.type === "if" || fn.node === null) {
+				}
+				else if (fn.type === "if" || fn.node === null) {
 					remove = true
 				}
 				if (remove) { //如果它没有在DOM树
@@ -2045,13 +2100,17 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					}
 					DEBUG && log.debug("removed ", el, ' with ', fn)
 					fn = fn.element = fn.node = fn.evaluator = null
-				} else if (nofire === true) {
+				}
+				else if (nofire === true) {
 					//nothing
-				} else if (typeof fn === "function") {
+				}
+				else if (typeof fn === "function") {
 					fn.apply(0, args) //强制重新计算自身
-				} else if (fn.getter) {
+				}
+				else if (fn.getter) {
 					fn.handler.apply(fn, args) //处理监控数组的方法
-				} else if (fn.node || fn.element) {
+				}
+				else if (fn.node || fn.element) {
 					fn.handler((fn.evaluator || noop).apply(0, fn.args || []), el, fn)
 				}
 			}
@@ -2080,7 +2139,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				if (currHTML === innerHTML) {
 					clearInterval(id)
 					callback()
-				} else {
+				}
+				else {
 					innerHTML = currHTML
 				}
 			}, interval)
@@ -2126,9 +2186,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			var nodeType = node.nodeType
 			if (nodeType === 1) {
 				scanTag(node, vmodels) //扫描元素节点
-			} else if (nodeType === 3 && exprRe.test(node.data)) {
+			}
+			else if (nodeType === 3 && exprRe.test(node.data)) {
 				scanText(node, vmodels) //扫描文本节点
-			} else if (config.commentInterpolate && nodeType === 8 && !exprRe.test(node.nodeValue)) {
+			}
+			else if (config.commentInterpolate && nodeType === 8 && !exprRe.test(node.nodeValue)) {
 				scanText(node, vmodels) //扫描注释节点
 			}
 			node = nextNode
@@ -2149,7 +2211,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					value: value
 				}
 			]
-		} else {
+		}
+		else {
 			tokens = scanExpr(textNode.data)
 		}
 		if (tokens.length) {
@@ -2177,8 +2240,9 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				hyperspace.appendChild(node)
 			}
 			textNode.parentNode.replaceChild(hyperspace, textNode)
-			if (bindings.length)
+			if (bindings.length) {
 				executeBindings(bindings, vmodels)
+			}
 		}
 	}
 
@@ -2217,7 +2281,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					if (events[type]) {
 						param = type
 						type = "on"
-					} else if (type === "enabled") {//吃掉ms-enabled绑定,用ms-disabled代替
+					}
+					else if (type === "enabled") {//吃掉ms-enabled绑定,用ms-disabled代替
 						type = "disabled"
 						value = "!(" + value + ")"
 					}
@@ -2484,7 +2549,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 						if (subscope && typeof subscope === "object") {
 							addDeps(subscope, SUBSCRIBES, data)
 
-						} else {
+						}
+						else {
 							break
 						}
 					} while (arr.length);
@@ -2494,8 +2560,9 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 						ret.push(prop.replace(/\./g, '$') + prefix + prop)
 					}
 				}
-				if (flag === 2)
+				if (flag === 2) {
 					vars.splice(i, 1)
+				}
 			}
 		}
 		return uniqSet(ret)
@@ -2594,7 +2661,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				if (start !== -1) {
 					filterArgs = "," + filterName.slice(start + 1, filterName.lastIndexOf(")")).trim()
 					filterName = filterName.slice(0, start).trim()
-				} else {
+				}
+				else {
 					filterArgs = ""
 				}
 				textBuffer.push(" if(filters", EXPOSE, ".", filterName, "){\n\ttry{\nret", EXPOSE,
@@ -2603,7 +2671,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			code = textBuffer.join("")
 			code += "\nreturn ret" + EXPOSE
 			names.push("filters" + EXPOSE)
-		} else if (dataType === "duplex") { //双工绑定
+		}
+		else if (dataType === "duplex") { //双工绑定
 			var _body = "'use strict';\nreturn function(vvv){\n\t" +
 				prefix +
 				";\n\tif(!arguments.length){\n\t\treturn " +
@@ -2617,10 +2686,12 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				DEBUG && log.debug("parse error ", ex)
 			}
 			return
-		} else if (dataType === "on") { //事件绑定
+		}
+		else if (dataType === "on") { //事件绑定
 			if (code.indexOf("(") === -1) {
 				code += ".call(this, $event)"
-			} else {
+			}
+			else {
 				code = code.replace("(", ".call(this,")
 			}
 			names.push("$event")
@@ -2629,7 +2700,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			var header = code.slice(0, lastIndex)
 			var footer = code.slice(lastIndex)
 			code = header + "\n" + footer
-		} else { //其他绑定
+		}
+		else { //其他绑定
 			code = "\nreturn " + code + ";" //IE全家 Function("return ")出错，需要Function("return ;")
 		}
 		try {
@@ -2739,7 +2811,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				attrName = data.param
 			if (method === "css") {
 				avalon(elem).css(attrName, val)
-			} else if (method === "attr") {
+			}
+			else if (method === "attr") {
 				// ms-attr-class="xxx" vm.xxx="aaa bbb ccc"将元素的className设置为aaa bbb ccc
 				// ms-attr-class="xxx" vm.xxx=false  清空元素的所有类名
 				// ms-attr-name="yyy"  vm.yyy="ooo" 为元素设置name属性
@@ -2760,7 +2833,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				if (isIE && !isInnate) {//IE下需要区分固有属性与自定义属性
 					if (VML && isVML(elem)) {
 						isInnate = true
-					} else if (SVG && !SVG_ELEMENT_RE.test(elem)) {
+					}
+					else if (SVG && !SVG_ELEMENT_RE.test(elem)) {
 						var attrs = elem.attributes || {}
 						var attr = attrs[attrName]
 						isInnate = attr ? attr.expando === false : attr === null
@@ -2768,10 +2842,12 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				}
 				if (isInnate) {
 					elem[attrName] = val
-				} else {
+				}
+				else {
 					elem.setAttribute(attrName, val)
 				}
-			} else if (method === "include" && val) {
+			}
+			else if (method === "include" && val) {
 				var vmodels = data.vmodels
 				var rendered = getBindingCallback(elem, "data-include-rendered", vmodels)
 				var loaded = getBindingCallback(elem, "data-include-loaded", vmodels)
@@ -2792,7 +2868,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 						avalon.nextTick(function() {
 							scanTemplate(templateCache[val])
 						})
-					} else {
+					}
+					else {
 						var xhr = getXHR()
 						xhr[LEGACY ? 'onreadystatechange' : 'onload'] = function() {
 							if (LEGACY && xhr.readyState === 4 || !LEGACY) {
@@ -2809,7 +2886,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 						xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest")
 						xhr.send(null)
 					}
-				} else {
+				}
+				else {
 					//IE系列与够新的标准浏览器支持通过ID取得元素（firefox14+）
 					//http://tjvantoll.com/2012/07/19/dom-element-references-as-global-variables/
 					var el = val && val.nodeType === 1 ? val : document.getElementById(val)
@@ -2834,7 +2912,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 						})
 					}
 				}
-			} else {
+			}
+			else {
 				if (LEGACY && !root.hasAttribute && typeof val === "string" && (method === "src" || method === "href")) {
 					val = val.replace(/&amp;/g, "&") //处理IE67自动转义的问题
 				}
@@ -2846,7 +2925,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				method = data.type
 			if (method === "class" && data.oldStyle) { //如果是旧风格
 				$elem.toggleClass(data.oldStyle, !!val)
-			} else {
+			}
+			else {
 				//如果存在冒号就有求值函数
 				data.toggleClass = data._evaluator ? !!data._evaluator.apply(elem, data._args) : true
 				data.newClass = data.immobileClass || val
@@ -2886,7 +2966,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			var key = "data-" + data.param
 			if (val && typeof val === "object") {
 				elem[key] = val
-			} else {
+			}
+			else {
 				elem.setAttribute(key, String(val))
 			}
 		},
@@ -2940,11 +3021,13 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 								el = data.startRepeat.nextSibling
 								if (el && el !== data.endRepeat) {
 									transition.appendChild(el)
-								} else {
+								}
+								else {
 									break
 								}
 							}
-						} else {
+						}
+						else {
 							transition = parent
 						}
 						recycleEachProxies(proxies)
@@ -3007,13 +3090,15 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				var fragment, nodes
 				if (val.nodeType === 11) {
 					fragment = val
-				} else if (val.nodeType === 1 || val.item) {
+				}
+				else if (val.nodeType === 1 || val.item) {
 					nodes = val.nodeType === 1 ? val.childNodes : val.item ? val : []
 					fragment = hyperspace.cloneNode(true)
 					while (nodes[0]) {
 						fragment.appendChild(nodes[0])
 					}
-				} else {
+				}
+				else {
 					fragment = avalon.parseHTML(val)
 				}
 				var replaceNodes = avalon.slice(fragment.childNodes)
@@ -3022,7 +3107,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					elem.removeChild(node)
 				}
 				data.replaceNodes = replaceNodes
-			} else {
+			}
+			else {
 				avalon.innerHTML(elem, val)
 			}
 			avalon.nextTick(function() {
@@ -3041,7 +3127,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				if (exprBindRe.test(elem.outerHTML.replace(rlt, "<").replace(rgt, ">"))) {
 					scanAttr(elem, data.vmodels)
 				}
-			} else { //移出DOM树，放进ifSanctuary DIV中，并用注释节点占据原位置
+			}
+			else { //移出DOM树，放进ifSanctuary DIV中，并用注释节点占据原位置
 				if (data.msInDocument) {
 					data.msInDocument = false
 					if (elem.parentNode) {
@@ -3068,15 +3155,18 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			var eventType = data.param.replace(/-\d+$/, "") // ms-on-mousemove-10
 			if (eventType === "scan") {
 				callback.call(elem, {type: eventType})
-			} else if (typeof data.specialBind === "function") {
+			}
+			else if (typeof data.specialBind === "function") {
 				data.specialBind(elem, callback)
-			} else {
+			}
+			else {
 				var removeFn = avalon.bind(elem, eventType, callback)
 			}
 			data.rollback = function() {
 				if (typeof data.specialUnbind === "function") {
 					data.specialUnbind()
-				} else {
+				}
+				else {
 					avalon.unbind(elem, eventType, removeFn)
 				}
 			}
@@ -3091,10 +3181,12 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					node.data = val
 				} catch (ex) {
 				}
-			} else { //绑定在特性节点上
+			}
+			else { //绑定在特性节点上
 				if ("textContent" in elem) {
 					elem.textContent = val
-				} else {
+				}
+				else {
 					elem.innerText = val
 				}
 			}
@@ -3105,8 +3197,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		"widget": noop
 	}
 
-	var rdash = /\(([^)]*)\)/
-	var rwhitespace = /^\s+$/
+	var DASH_RE = /\(([^)]*)\)/
+	var WHITESPACES_RE = /^\s+$/
 
 	function parseDisplay(nodeName) {
 		//用于取得此类标签的默认display值
@@ -3116,7 +3208,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			root.appendChild(node)
 			if (LEGACY && isW3C || !LEGACY) {
 				val = getComputedStyle(node, null).display
-			} else {
+			}
+			else {
 				val = node.currentStyle.display
 			}
 			root.removeChild(node)
@@ -3129,7 +3222,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 	function getterFn() {
 		return this.evaluator.apply(0, this.args || [])
 	}
-
+	function valSetterFn(list, key) {
+		return function(val) {
+			list[key] = val
+		} //#303
+	}
 	//这里的函数只会在第一次被扫描后被执行一次，并放进行对应VM属性的subscribers数组内（操作方为registerSubscriber）
 	var bindingHandlers = avalon.bindingHandlers = {
 		//这是一个字符串属性绑定的范本, 方便你在title, alt, src, href, include, css添加插值表达式
@@ -3162,14 +3259,16 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				var colonIndex = noExpr.indexOf(":") //取得第一个冒号的位置
 				if (colonIndex === -1) { // 比如 ms-class="aaa bbb ccc" 的情况
 					var className = text
-				} else { // 比如 ms-class-1="ui-state-active:checked" 的情况 
+				}
+				else { // 比如 ms-class-1="ui-state-active:checked" 的情况
 					className = text.slice(0, colonIndex)
 					rightExpr = text.slice(colonIndex + 1)
 					parseExpr(rightExpr, vmodels, data) //决定是添加还是删除
 					if (!data.evaluator) {
 						DEBUG && log.debug("ms-class '" + (rightExpr || "").trim() + "' 不存在于VM中")
 						return false
-					} else {
+					}
+					else {
 						data._evaluator = data.evaluator
 						data._args = data.args
 					}
@@ -3179,7 +3278,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					data.immobileClass = className
 				}
 				parseExprProxy("", vmodels, data, (hasExpr ? scanExpr(className) : null))
-			} else {
+			}
+			else {
 				data.immobileClass = data.oldStyle = data.param
 				parseExprProxy(text, vmodels, data)
 			}
@@ -3237,12 +3337,14 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				parent.replaceChild(endRepeat, elem)
 				parent.insertBefore(startRepeat, endRepeat)
 				template.appendChild(elem)
-			} else {
+			}
+			else {
 				var node
 				while (node = elem.firstChild) {
-					if (node.nodeType === 3 && rwhitespace.test(node.data)) {
+					if (node.nodeType === 3 && WHITESPACES_RE.test(node.data)) {
 						ES6 ? node.remove() : elem.removeChild(node)
-					} else {
+					}
+					else {
 						template.appendChild(node)
 					}
 				}
@@ -3304,16 +3406,13 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					for (var key in list) {
 						if (list.hasOwnProperty(key) && key !== "hasOwnProperty") {
 							pool[key] = createWithProxy(key, list[key], {})
-							pool[key].$watch("$val", (function(key) {
-								return function(val) {
-									list[key] = val
-								} //#303
-							})(key))
+							pool[key].$watch("$val", valSetterFn(list, key))
 						}
 					}
 				}
 				data.handler("append", list, pool)
-			} else {
+			}
+			else {
 				data.handler("add", 0, list)
 			}
 		},
@@ -3336,9 +3435,9 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				bindingHandlers.on[eventType + "Hook"](data)
 			}
 			if (value.indexOf("(") > 0 && value.indexOf(")") > -1) {
-				var matched = (value.match(rdash) || ["", ""])[1].trim()
+				var matched = (value.match(DASH_RE) || ["", ""])[1].trim()
 				if (matched === "" || matched === "$event") { // aaa() aaa($event)当成aaa处理
-					value = value.replace(rdash, "")
+					value = value.replace(DASH_RE, "")
 				}
 			}
 			parseExprProxy(value, vmodels, data)
@@ -3411,11 +3510,13 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 						elem.addEventListener("DOMNodeRemovedFromDocument", function() {
 							setTimeout(offTree)
 						})
-					} else {
+					}
+					else {
 						avalon.tick(offTree)
 					}
 				}
-			} else if (vmodels.length) { //如果该组件还没有加载，那么保存当前的vmodels
+			}
+			else if (vmodels.length) { //如果该组件还没有加载，那么保存当前的vmodels
 				elem.vmodels = vmodels
 			}
 		}
@@ -3445,36 +3546,13 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			type = element.type,
 			bound = data.bound,
 			$elem = avalon(element),
-			triggered = false,
-			composing = false,
+			triggered,
+			composing,
+			updateVModel,
 			callback = function(value) {
 				triggered = true
 				data.changed.call(this, value)
-			},
-			compositionStart = function() {
-				composing = true
-			},
-			compositionEnd = function() {
-				composing = false
-			},
-		//当value变化时改变model的值
-			updateVModel = function() {
-				if (composing)
-					return
-				var val = element.oldValue = element.value
-				if ($elem.data("duplex-observe") !== false) {
-					evaluator(val)
-					callback.call(element, val)
-				}
 			}
-		//当model变化时,它就会改变value的值
-		data.handler = function() {
-			var val = evaluator()
-			val = val == null ? "" : val + ""
-			if (val !== element.value) {
-				element.value = val
-			}
-		}
 
 		if (type === "checkbox" && fixType === "radio") {
 			type = "radio"
@@ -3489,10 +3567,12 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					var val = element.value
 					if (fixType === "text") {
 						evaluator(val)
-					} else if (fixType === "bool") {
+					}
+					else if (fixType === "bool") {
 						val = val === "true"
 						evaluator(val)
-					} else {
+					}
+					else {
 						val = !element.defaultChecked
 						evaluator(val)
 						element.checked = val
@@ -3501,14 +3581,16 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				}
 			}
 			bound(fixType ? "click" : "mousedown", updateVModel)
-		} else if (type === "checkbox") {
+		}
+		else if (type === "checkbox") {
 			updateVModel = function() {
 				if ($elem.data("duplex-observe") !== false) {
 					var method = element.checked ? "ensure" : "remove"
 					var array = evaluator()
 					if (Array.isArray(array)) {
 						avalon.Array[method](array, element.value)
-					} else {
+					}
+					else {
 						log.error("ms-duplex位于checkbox时要求对应一个数组")
 					}
 					callback.call(element, array)
@@ -3521,38 +3603,66 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 
 			bound(LEGACY && isW3C || !LEGACY ? "change" : "click", updateVModel)
 
-		} else {
+		}
+		else {
+			//当model变化时,它就会改变value的值
+			data.handler = function() {
+				var val = evaluator()
+				val = val == null ? "" : val + ""
+				if (val !== element.value) {
+					element.value = val
+				}
+			}
+			//当value变化时改变model的值
+			updateVModel = function() {
+				if (composing) {
+					return
+				}
+				var val = element.oldValue = element.value
+				if ($elem.data("duplex-observe") !== false) {
+					evaluator(val)
+					callback.call(element, val)
+				}
+			}
 			var event = element.attributes["data-duplex-event"] || element.attributes["data-event"] || {}
 			event = event.value
 			if (event === "change") {
 				bound("change", updateVModel)
-			} else {
+			}
+			else {
 				if (LEGACY && isW3C && document.documentMode !== 9 || !LEGACY) { //IE10+, isW3C
 					bound("input", updateVModel)
-					bound("compositionstart", compositionStart)
-					bound("compositionend", compositionEnd)
-				} else {
+					bound("compositionstart", function() {
+						composing = true
+					})
+					bound("compositionend", function() {
+						composing = false
+					})
+				}
+				else {
 					var events = ["keyup", "paste", "cut", "change"]
 
-					function removeFn(e) {
+					var updateFn = function(e) {
 						var key = e.keyCode
 						//    command            modifiers                   arrows
-						if (key === 91 || (15 < key && key < 19) || (37 <= key && key <= 40))
+						if (key === 91 || (15 < key && key < 19) || (37 <= key && key <= 40)) {
 							return
+						}
 						if (e.type === "cut") {
 							avalon.nextTick(updateVModel)
-						} else {
+						}
+						else {
 							updateVModel()
 						}
 					}
 
 					events.forEach(function(type) {
-						element.attachEvent("on" + type, removeFn)
+						element.attachEvent("on" + type, updateFn)
 					})
 
 					data.rollback = function() {
 						events.forEach(function(type) {
-							element.detachEvent("on" + type, removeFn)
+							element.detachEvent("on" + type, updateFn)
 						})
 					}
 				}
@@ -3562,7 +3672,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		launch(function() {
 			if (avalon.contains(root, element)) {
 				onTree.call(element)
-			} else if (!element.msRetain) {
+			}
+			else if (!element.msRetain) {
 				return false
 			}
 		})
@@ -3592,7 +3703,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		if (!this.disabled && this.oldValue !== this.value) {
 			if (LEGACY && isW3C || !LEGACY) {
 				fireW3CEvent(this, "input")
-			} else {
+			}
+			else {
 				this.fireEvent("onchange")
 			}
 		}
@@ -3666,7 +3778,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				//先等到select里的option元素被扫描后，才根据model设置selected属性  
 				registerSubscriber(data)
 				data.changed.call(element, evaluator())
-			} else {
+			}
+			else {
 				innerHTML = currHTML
 			}
 		}, 20)
@@ -3684,7 +3797,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			var target = ret.target = event.srcElement
 			if (event.type.indexOf("key") === 0) {
 				ret.which = event.charCode != null ? event.charCode : event.keyCode
-			} else if (/mouse|click/.test(event.type)) {
+			}
+			else if (/mouse|click/.test(event.type)) {
 				var doc = target.ownerDocument || document
 				var box = doc.compatMode === "BackCompat" ? doc.body : doc.documentElement
 				ret.pageX = event.clientX + (box.scrollLeft >> 0) - (box.clientLeft >> 0)
@@ -3893,16 +4007,18 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		removeAll: function(all) { //移除N个元素
 			var i;
 			if (Array.isArray(all)) {
-				for(i = all.length; i > 0;) {
+				for (i = all.length; i > 0;) {
 					this.remove(all[--i])
 				}
-			} else if (typeof all === "function") {
+			}
+			else if (typeof all === "function") {
 				for (i = this.length; i > 0;) {
 					if (all(this[--i], i)) {
 						this.splice(i, 1)
 					}
 				}
-			} else {
+			}
+			else {
 				this.clear()
 			}
 		},
@@ -3925,9 +4041,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 							target[i] = val[i]
 						}
 					}
-				} else if (valueType === "array") {
+				}
+				else if (valueType === "array") {
 					target.clear().push.apply(target, val)
-				} else if (target !== val) {
+				}
+				else if (target !== val) {
 					this[index] = val
 					this.$model[index] = val
 					notifySubscribers(this, "set", index, val)
@@ -4048,15 +4166,19 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 						if (LEGACY && dest.value !== src.value) {
 							dest.value = src.value//IE67复制后，value从on变成""
 						}
-					} else if (nodeName === "OBJECT") {
+					}
+					else if (nodeName === "OBJECT") {
 						if (dest.parentNode) {//IE6-10拷贝子孙元素失败了
 							dest.outerHTML = src.outerHTML
 						}
-					} else if (nodeName === "OPTION") {
+					}
+					else if (nodeName === "OPTION") {
 						dest.defaultSelected = dest.selected = src.defaultSelected
-					} else if (nodeName === "INPUT" || nodeName === "TEXTAREA") {
+					}
+					else if (nodeName === "INPUT" || nodeName === "TEXTAREA") {
 						dest.defaultValue = src.defaultValue
-					} else if (VML && isVML(src)) {
+					}
+					else if (VML && isVML(src)) {
 						//src.tagUrn === "urn:schemas-microsoft-com:vml"//判定是否为VML元素
 						var props = {}//处理VML元素
 						src.outerHTML.replace(/\s*=\s*/g, "=").replace(/(\w+)=("|')([^\2]+)\2/g, function(a, prop, quote, val) {
@@ -4127,11 +4249,13 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			pos += 1
 			for (var i = 0; i < pos; i++) {
 				ret = ret.nextSibling
-				if (ret === end)
+				if (ret === end) {
 					return end
+				}
 			}
 			return ret
-		} else {
+		}
+		else {
 			return parent.childNodes[data.group * pos] || null
 		}
 	}
@@ -4353,16 +4477,18 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			num = "" + num
 			while (num.length < digits)
 				num = "0" + num
-			if (trim)
+			if (trim) {
 				num = num.substr(num.length - digits)
+			}
 			return neg + num
 		}
 
 		function dateGetter(name, size, offset, trim) {
 			return function(date) {
 				var value = date["get" + name]()
-				if (offset > 0 || value > -offset)
+				if (offset > 0 || value > -offset) {
 					value += offset
+				}
 				if (value === 0 && offset === -12) {
 					value = 12
 				}
@@ -4449,7 +4575,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			if (typeof date === "string") {
 				if (/^\d+$/.test(date)) {
 					date = toInt(date)
-				} else {
+				}
+				else {
 					var trimDate = date.trim()
 					if (trimDate.match(/^(\d+)-(\d+)-(\d{4})$/) || trimDate.match(/^(\d+)\s+(\d+),(\d{4})$/)) {
 						date = RegExp.$3 + "/" + RegExp.$1 + "/" + RegExp.$2
@@ -4470,7 +4597,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				if (match) {
 					parts = parts.concat(match.slice(1))
 					format = parts.pop()
-				} else {
+				}
+				else {
 					parts.push(format)
 					format = null
 				}
@@ -4595,13 +4723,15 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					require(shim.deps || "", function() {
 						loadJS(url, id, function() {
 							modules[id].state = 2
-							if (shim.exports)
+							if (shim.exports) {
 								modules[id].exports = typeof shim.exports === "function" ?
 									shim.exports() : window[shim.exports]
+							}
 							checkDependencies()
 						})
 					})
-				} else {
+				}
+				else {
 					loadJS(url, id)
 				}
 			}
@@ -4629,7 +4759,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					var status = xhr.status;
 					if (status > 399 && status < 600) {
 						throw new Error(url + " 对应资源不存在或没有开启 CORS")
-					} else {
+					}
+					else {
 						modules[id].state = 2
 						modules[id].exports = xhr.responseText
 						checkDependencies()
@@ -4716,7 +4847,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					node = null // 处理旧式IE下的循环引用问题
 				}, 0)
 				DEBUG && log.debug("加载 " + id + " 失败")
-			} else {
+			}
+			else {
 				return true
 			}
 		}
@@ -4744,22 +4876,27 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			//4. 补全路径
 			if (/^(\w+)(\d)?:.*/.test(url)) {
 				ret = url
-			} else {
+			}
+			else {
 				parent = parent.substr(0, parent.lastIndexOf("/"))
 				var tmp = url.charAt(0)
 				if (tmp !== "." && tmp !== "/") { //相对于根路径
 					ret = basePath + url
-				} else if (url.slice(0, 2) === "./") { //相对于兄弟路径
+				}
+				else if (url.slice(0, 2) === "./") { //相对于兄弟路径
 					ret = parent + url.slice(1)
-				} else if (url.slice(0, 2) === "..") { //相对于父路径
+				}
+				else if (url.slice(0, 2) === "..") { //相对于父路径
 					ret = parent + "/" + url
 					var rdeuce = /\/\w+\/\.\./
 					while (rdeuce.test(ret)) {
 						ret = ret.replace(rdeuce, "")
 					}
-				} else if (tmp === "/") {
+				}
+				else if (tmp === "/") {
 					ret = url //相对于根路径
-				} else {
+				}
+				else {
 					throw new Error("不符合模块标识规则: " + url)
 				}
 			}
@@ -4835,7 +4972,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			}
 			if (dn === cn) { //如果需要安装的等于已安装好的
 				fireFactory(id, args, factory) //安装到框架中
-			} else {
+			}
+			else {
 				//放到检测列队中,等待checkDependencies处理
 				loadings.unshift(id)
 			}
@@ -4887,7 +5025,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 
 			if (name) {
 				factory.delay(name, args)
-			} else { //先进先出
+			}
+			else { //先进先出
 				factories.push(factory)
 			}
 		}
@@ -4917,7 +5056,8 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			if (AMD) {
 				define('ready!', noop)
 				checkDependencies()
-			} else {
+			}
+			else {
 				readyList.forEach(function(a) {
 					a(avalon)
 				})
@@ -4937,9 +5077,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 
 	if (document.readyState === "complete") {
 		setTimeout(fireReady) //如果在domReady之外加载
-	} else if (LEGACY && isW3C || !LEGACY) {
+	}
+	else if (LEGACY && isW3C || !LEGACY) {
 		document.addEventListener("DOMContentLoaded", fireReady)
-	} else {
+	}
+	else {
 		document.attachEvent("onreadystatechange", function() {
 			if (document.readyState === "complete") {
 				fireReady()
@@ -4954,9 +5096,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 	avalon.ready = function(fn) {
 		if (AMD) {
 			require("ready!", fn)
-		} else if (fireReady === noop) {
+		}
+		else if (fireReady === noop) {
 			fn(avalon)
-		} else {
+		}
+		else {
 			readyList.push(fn)
 		}
 	}
