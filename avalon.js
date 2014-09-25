@@ -523,7 +523,7 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			model = model || {} //放置$model上的属性
 			var normalProperties = {} //普通属性
 			var computedProperties = [] //计算属性
-			var watchProperties = arguments[2] || {} //强制要监听的属性
+			var watchProperties = avalon.mix({}, arguments[2]) //强制要监听的属性
 			var skipArray = scope.$skipArray //要忽略监控的属性
 			for (i = 0; name = SKIP_PROPERTIES[i++];) {
 				delete scope[name]
@@ -1030,15 +1030,9 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					return this
 				}
 				var fn = this,
-					argv = arguments
+					args = aSlice.call(arguments, 1)
 				return function() {
-					var args = [],
-						i
-					for (i = 1; i < argv.length; i++)
-						args.push(argv[i])
-					for (i = 0; i < arguments.length; i++)
-						args.push(arguments[i])
-					return fn.apply(scope, args)
+					return fn.apply(scope, args.concat(aSlice.call(arguments)))
 				}
 			}
 		}
@@ -1962,24 +1956,27 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			}
 			var events = this.$events
 			var callbacks = events[type] || []
-			var all = events.$all || []
+			var all = events.$all
 			var args = aSlice.call(arguments, 1)
 			var i, callback
 			for (i = 0; callback = callbacks[i++];) {
 				callback.apply(this, args)
 			}
-			for (i = 0; callback = all[i++];) {
-				callback.apply(this, arguments)
+			if (all)
+			{
+				for (i = 0; callback = all[i++];) {
+					callback.apply(this, arguments)
+				}
 			}
 			var element = events.expr && findNode(events.expr)
 			if (element) {
-				var detail = [type].concat(args)
 				if (special === "up" || special === "down" || special === "all") {
+					var vm, node
 					for (i in avalon.vmodels) {
-						var v = avalon.vmodels[i]
-						if (v && v.$events && v.$events.expr) {
+						vm = avalon.vmodels[i]
+						if (vm && vm.$events && vm.$events.expr) {
 							if (v !== this) {
-								var node = findNode(v.$events.expr)
+								node = findNode(vm.$events.expr)
 								if (!node) {
 									continue
 								}
@@ -1987,24 +1984,25 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 										special === "down" ? element.contains(node) : //向下捕获
 									node.contains(element)//向上冒泡
 								if (ok) {
-									node._avalon = v//符合条件的加一个标识
+									node._avalon = vm//符合条件的加一个标识
 								}
 							}
 						}
 					}
+					var detail = [type].concat(args)
 					var nodes = LEGACY ? document.getElementsByTagName("*") : document.querySelectorAll("[avalonctrl]");//实现节点排序
-					var alls = []
-					aProp.forEach.call(nodes, function(el) {
-						if (el._avalon) {
-							alls.push(el._avalon)
-							el._avalon = ""
-							el.removeAttribute("_avalon")
+					all = []
+					for(i = 0; node = nodes[i++];) {
+						if (node._avalon) {
+							all.push(node._avalon)
+							node._avalon = ""
+							node.removeAttribute("_avalon")
 						}
-					})
+					}
 					if (special === "up") {
 						alls.reverse()
 					}
-					alls.forEach(function(v) {
+					all.forEach(function(v) {
 						v.$fire.apply(v, detail)
 					})
 				}
@@ -2417,13 +2415,13 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		rgt = /&gt;/g
 
 	function trimFilter(value, leach) {
-		if (value.indexOf("|") > 0) { // 抽取过滤器 先替换掉所有短路与
+		if (value.indexOf("|") > 0) { // 抽取过滤器 先替换掉所有短路或
 			value = value.replace(r11a, "U2hvcnRDaXJjdWl0") //btoa("ShortCircuit")
 			value = value.replace(rfilters, function(c, d, e) {
 				leach.push(d + (e || ""))
 				return ""
 			})
-			value = value.replace(r11b, "||") //还原短路与
+			value = value.replace(r11b, "||") //还原短路或
 		}
 		return value
 	}
@@ -2548,7 +2546,6 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 						subscope = subscope[propN]
 						if (subscope && typeof subscope === "object") {
 							addDeps(subscope, SUBSCRIBES, data)
-
 						}
 						else {
 							break
@@ -2560,19 +2557,17 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 						ret.push(prop.replace(/\./g, '$') + prefix + prop)
 					}
 				}
-				if (flag === 2) {
-					vars.splice(i, 1)
-				}
+				vars.splice(i, 1) //必须移除，否则可能引起死循环
 			}
 		}
 		return uniqSet(ret)
 	}
 
 	var uniqSet = function(array) {
-		var ret = [], unique = {}
-		for (var i = 0; i < array.length; i++) {
-			var el = array[i]
-			var id = el && typeof el.$id === "string" ? el.$id : el
+		var ret = [], unique = {}, el, i = 0, len = array.length, id
+		for (; i < len; i++) {
+			el = array[i]
+			id = el && typeof el.$id === "string" ? el.$id : el
 			if (!unique[id]) {
 				unique[id] = ret.push(el)
 			}
@@ -2723,12 +2718,15 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		'"': '\\"',
 		'\\': '\\\\'
 	};
-	var quote = window.JSON && JSON.stringify || LEGACY && function(str) {
-		return   '"' + str.replace(/[\\\"\x00-\x1f]/g, function(a) {
+	if(LEGACY) {
+		function quoteReplacer(a) {
 			var c = META[a];
 			return typeof c === 'string' ? c :
 				'\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
-		}) + '"'
+		}
+	}
+	var quote = window.JSON && JSON.stringify || LEGACY && function(str) {
+		return   '"' + str.replace(/[\\\"\x00-\x1f]/g, quoteReplacer) + '"'
 	}
 
 	function getExprText(el) {
@@ -3396,8 +3394,10 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			}
 			node = template.firstChild
 			data.fastRepeat = !!node && node.nodeType === 1 && template.lastChild === node && !node.attributes["ms-controller"] && !node.attributes["ms-important"]
-			list[SUBSCRIBES] && list[SUBSCRIBES].push(data)
-			notifySubscribers(list) //强制垃圾回收
+			if(list[SUBSCRIBES]) {
+				list[SUBSCRIBES].push(data)
+				notifySubscribers(list) //强制垃圾回收
+			}
 			if (!Array.isArray(list) && type !== "each") {
 				var pool = withProxyPool[list.$id]
 				if (!pool) {
@@ -4319,6 +4319,9 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			source.$skipArray = [param]
 		}
 		proxy = modelFactory(source, 0, watchEachOne)
+		proxy.$watch(param, function(val){
+			data.getter().set(proxy.$index,  val)
+		})
 		proxy.$id = "$proxy$" + data.type + Math.random()
 		return proxy
 	}
@@ -4336,6 +4339,7 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 			obj[prop][SUBSCRIBES].length = 0;
 
 		})
+		proxy.$events = {}
 		if (proxy[name][SUBSCRIBES]) {
 			proxy[name][SUBSCRIBES].length = 0;
 		}
