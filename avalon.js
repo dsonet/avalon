@@ -7,7 +7,7 @@
  Released under the MIT license
  avalon 1.3.5 2014.9.15
  ==================================================*/
-var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true, FILTERS = true, DEBUG = true;
+//var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true, FILTERS = true, DEBUG = true;
 //代码规范: 全大写表示声明常量，TabWidth = 4
 (function(window) {
 	/*********************************************************************
@@ -390,7 +390,7 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 
 	/*判定类数组,如节点集合，纯数组，arguments与拥有非负整数的length属性的纯JS对象*/
 	var isArrayLike = avalon.isArrayLike = function(obj) {
-		if (LEGACY ? obj && typeof obj === "object" && !avalon.isWindow(obj) : obj && typeof obj === "object") {
+		if (obj && typeof obj === "object" && !avalon.isWindow(obj)) {
 			var n = obj.length
 			if (!LEGACY) {
 				var str = serialize.call(obj)
@@ -399,18 +399,13 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				}
 			}
 			//由于ecma262v5能修改对象属性的enumerable，因此不能用propertyIsEnumerable来判定了
-			if (LEGACY ? +n === n && !(n % 1) && n >= 0 : +n === n && !(n % 1) && n >= 0 && str === "[object Object]") { //检测length属性是否为非负整数
-				if (LEGACY) {
-					try {
-						if ({}.propertyIsEnumerable.call(obj, "length") === false) { //如果是原生对象
-							return Array.isArray(obj) || /^\s?function/.test(obj.item || obj.callee)
-						}
-						return true
-					} catch (ex) { //IE的NodeList直接抛错
-						return true
+			if (+n === n && !(n % 1) && n >= 0) { //检测length属性是否为非负整数
+				try {
+					if ({}.propertyIsEnumerable.call(obj, "length") === false) { //如果是原生对象
+						return Array.isArray(obj) || /^\s?function/.test(obj.item || obj.callee)
 					}
-				}
-				else {
+					return true
+				} catch (ex) { //IE的NodeList直接抛错
 					return true
 				}
 			}
@@ -774,6 +769,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				accessor = function(newValue) {
 					var preValue = model[name]
 					if (arguments.length) {
+						switch(avalon.type(preValue)) {
+							case 'number':
+								newValue = Number(newValue)
+								break;
+						}
 						if (!isEqual(preValue, newValue)) {
 							model[name] = newValue //同步$model
 							var vmodel = watchProperties.vmodel
@@ -2105,7 +2105,7 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				else if (typeof fn === "function") {
 					fn.apply(0, args) //强制重新计算自身
 				}
-				else if (fn.getter) {
+				else if (fn.repeater) {
 					fn.handler.apply(fn, args) //处理监控数组的方法
 				}
 				else if (fn.node || fn.element) {
@@ -2984,7 +2984,7 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 					case "add": //在pos位置后添加el数组（pos为数字，el为数组）
 						spans = []
 						lastFn = {}
-						last = data.getter().length - 1
+						last = data.repeater().length - 1
 						for (i = 0, n = el.length; i < n; i++) {
 							var ii = i + pos
 							proxy = getEachProxy(ii, el[i], data, last)
@@ -3217,7 +3217,7 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 	}
 
 	avalon.parseDisplay = parseDisplay
-	function getterFn() {
+	function repeatItemEvaluator() {
 		return this.evaluator.apply(0, this.args || [])
 	}
 	function valSetterFn(list, key) {
@@ -3314,11 +3314,11 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				DEBUG && log.warn("建议使用ms-repeat代替ms-each, ms-with, ms-repeat只占用一个标签并且性能更好")
 			}
 			var elem = data.callbackElement = data.element //用于判定当前元素是否位于DOM树
-			data.getter = getterFn
+			data.repeater = repeatItemEvaluator
 			data.proxies = []
 			var stop = true
 			try {
-				list = data.getter()
+				list = data.repeater()
 				if (COMPLEX_TYPE_RE.test(avalon.type(list))) {
 					stop = false
 				}
@@ -4090,15 +4090,21 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 
 	//============ each/repeat/with binding 用到的辅助函数与对象 ======================
 	//得到某一元素节点或文档碎片对象下的所有注释节点
-	var queryComments = LEGACY && document.createTreeWalker || !LEGACY ? function(parent) {
-		var tw = document.createTreeWalker(parent, NodeFilter.SHOW_COMMENT, null, null),
-			comment, ret = []
-		while (comment = tw.nextNode()) {
-			ret.push(comment)
+	var queryComments = function(parent, array) {
+		if(array){
+			var nodes = parent.childNodes
+			for (var i = 0, el; el = nodes[i++]; ) {
+				if (el.nodeType === 8) {
+					array.push(el)
+				} else if (el.nodeType === 1) {
+					queryComments(el, array)
+				}
+			}
 		}
-		return ret
-	} : function(parent) {
-		return parent.getElementsByTagName("!")
+		else {
+			queryComments(parent, array = [])
+		}
+		return array
 	}
 	//将通过ms-if移出DOM树放进ifSanctuary的元素节点移出来，以便垃圾回收
 
@@ -4138,25 +4144,25 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 				}
 			}
 		}
-		var getAll = function(elem, ret) {//VML的getElementsByTagName("*")不能取得所有元素节点
+		var getSubNodes = function(elem, ret) {//VML的getElementsByTagName("*")不能取得所有元素节点
 			if (ret) {
 				var nodes = elem.childNodes;
 				for (var i = 0, el; el = nodes[i++];) {
 					if (el.nodeType === 1) {
 						ret.push(el)
-						getAll(el, ret)
+						getSubNodes(el, ret)
 					}
 				}
 			}
 			else {
-				getAll(elem, ret = []);
+				getSubNodes(elem, ret = []);
 			}
 			return ret
 		}
 		var fixCloneNode = function(src) {
 			var target = src.cloneNode(true)
-			var srcAll = getAll(src)
-			var destAll = getAll(target)
+			var srcAll = getSubNodes(src)
+			var destAll = getSubNodes(target)
 			for (var k = 0; src = srcAll[k]; k++) {
 				if (src.nodeType === 1) {
 					var nodeName = src.nodeName
@@ -4296,7 +4302,7 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		var param = data.param || "el", proxy
 		var source = {
 			$remove: function() {
-				return data.getter().removeAt(proxy.$index)
+				return data.repeater().removeAt(proxy.$index)
 			},
 			$itemName: param,
 			$index: index,
@@ -4320,33 +4326,39 @@ var LEGACY = false, ES5 = true, ES6 = false, AMD = true, SVG = true, VML = true,
 		}
 		proxy = modelFactory(source, 0, watchEachOne)
 		proxy.$watch(param, function(val){
-			data.getter().set(proxy.$index,  val)
+			data.repeater().set(proxy.$index,  val)
 		})
 		proxy.$id = "$proxy$" + data.type + Math.random()
 		return proxy
 	}
 
-	function recycleEachProxies(array) {
-		for (var i = 0, el; el = array[i++];) {
-			recycleEachProxy(el)
+	function recycleEachProxies(proxies) {
+		for (var i = 0, proxy, obj, name; proxy = proxies[i++];) {
+			obj = proxy.$accessors, name = proxy.$itemName;
+			breakCircularReference(obj.$index)
+			breakCircularReference(obj.$last)
+			breakCircularReference(obj.$first)
+			breakCircularReference(obj[name])
+			breakCircularReference(proxy[name])
+			proxy.$events = {}
+			if (eachProxyPool.unshift(proxy) > config.maxRepeatSize) {
+				eachProxyPool.pop()
+			}
 		}
-		array.length = 0
+		proxies.length = 0
 	}
 
-	function recycleEachProxy(proxy) {
-		var obj = proxy.$accessors, name = proxy.$itemName;
-		!ES6 && ["$index", "$last", "$first"].forEach(function(prop) {
-			obj[prop][SUBSCRIBES].length = 0;
-
-		})
-		proxy.$events = {}
-		if (proxy[name][SUBSCRIBES]) {
-			proxy[name][SUBSCRIBES].length = 0;
-		}
-		if (eachProxyPool.unshift(proxy) > config.maxRepeatSize) {
-			eachProxyPool.pop()
-		}
-	}
+	function breakCircularReference(prop) {
+		var arr
+        if (prop && Array.isArray(arr = prop[SUBSCRIBES])) {
+            arr.forEach(function(el) {
+                if (el.evaluator) {
+                    el.evaluator = el.element = el.node = null
+                }
+            })
+            arr.length = 0
+        }
+    }
 
 	function lowercase(str) {
 		return str.toLowerCase()
