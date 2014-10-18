@@ -9,7 +9,11 @@
     </head>
     <body><script type="text/javascript">
     <!--
-		document.write(btoa("shortandop"))
+		var vm = avalon.define('vmTest',function(vm){
+			vm.user={password:'', ext:{}, name:""};
+			vm.login= function(){}
+		});
+		console.log(vm.$model)
     //-->
     </script>
     </body>
